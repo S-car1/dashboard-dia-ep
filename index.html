@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard DIA Parvularia · SLEP Del Pino</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧸</text></svg>">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  
+  <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+  <style>
+    /* TEMA CLARO POR DEFECTO */
+    :root {
+      --bg:         #f6f8fa; --surface:    #ffffff; --surface-2:  #f3f4f6;
+      --border:     #d0d7de; --border-2:   #afb8c1; --text:       #24292f;
+      --text-muted: #57606a; --leng:       #0284c7; --mate:       #ea580c;
+      --total:      #1a7f37; --purple:     #8250df; --red:        #cf222e; --r: 12px;
+      --font:       'Archivo', sans-serif; --mono:       'JetBrains Mono', monospace;
+      
+      /* Colores Pedagógicos Parvularia */
+      --c-noev: #9ca3af; --c-com: #ef4444; --c-des: #f59e0b; --c-con: #84cc16; --c-pro: #22c55e;
+    }
+
+    /* CONFIGURACIÓN DEL TEMA OSCURO */
+    body.dark-theme {
+      --bg:         #0d1117; --surface:    #161b22; --surface-2:  #21262d;
+      --border:     #30363d; --border-2:   #3d444d; --text:       #e6edf3;
+      --text-muted: #7d8590; --leng:       #38bdf8; --mate:       #fb923c;
+      --total:      #34d399; --purple:     #a78bfa; --red:        #f87171;
+    }
+
+    html { font-size: 17px; }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: var(--font); line-height: 1.5; min-height: 100vh; overflow-x: hidden; transition: background 0.3s, color 0.3s; }
+
+    /* PANTALLA DE LOGIN */
+    #login-overlay {
+      position: fixed; inset: 0; background: var(--bg); z-index: 5000;
+      display: flex; align-items: center; justify-content: center; padding: 2rem;
+    }
+    .login-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--r);
+      padding: 2.5rem; width: 100%; max-width: 400px; box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    body.dark-theme .login-card { box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+    .login-card img { height: 60px; margin-bottom: 1.5rem; }
+    .login-card h2 { font-size: 1.2rem; font-weight: 800; margin-bottom: 0.5rem; }
+    .login-card p { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 2rem; }
+    .input-group { text-align: left; margin-bottom: 1.2rem; }
+    .input-group label { display: block; font-size: 0.7rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; }
+    .input-group input {
+      width: 100%; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px;
+      padding: 0.8rem; color: var(--text); font-family: var(--font); outline: none; transition: 0.2s;
+    }
+    .input-group input:focus { border-color: var(--leng); box-shadow: 0 0 0 2px rgba(56,189,248,0.1); }
+    .btn-login {
+      width: 100%; background: var(--leng); color: #ffffff; border: none; border-radius: 8px;
+      padding: 0.9rem; font-weight: 800; cursor: pointer; transition: 0.2s; margin-top: 1rem;
+    }
+    body.dark-theme .btn-login { color: var(--bg); }
+    .btn-login:hover { filter: brightness(1.1); transform: translateY(-1px); }
+    #login-error { color: var(--red); font-size: 0.8rem; margin-top: 1rem; display: none; font-weight: 600; }
+
+    /* DASHBOARD */
+    .sticky-top-section { position: sticky; top: 0; z-index: 1000; background: var(--surface); border-bottom: 1px solid var(--border); box-shadow: 0 4px 20px rgba(0,0,0,0.05); transition: background 0.3s, border-color 0.3s; }
+    body.dark-theme .sticky-top-section { box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+    .header { padding: 1rem 2rem 0.5rem 2rem; display: block; }
+    .header::after { content: ""; display: table; clear: both; }
+    .header-info { float: left; display: flex; align-items: center; gap: 1rem; margin-right: 2rem; margin-bottom: 0.5rem; }
+    .filter-bar { padding: 0.5rem 2rem 0.8rem 2rem; display: flex; flex-wrap: wrap; gap: 1.2rem; align-items: center; clear: both; }
+    
+    .filter-group { position: relative; }
+    .filter-group::before { content: attr(data-label); position: absolute; left: 0; top: 8px; font-size: 0.85rem; font-weight: 800; color: var(--text-muted); pointer-events: none; transition: opacity 0.2s, color 0.2s; z-index: 10; letter-spacing: 0.05em; }
+    .filter-group:hover::before { color: var(--text); }
+    .filter-group:focus-within::before { opacity: 0; }
+
+    /* BARRA DE NAVEGACIÓN Y MENÚS */
+    .tabs-nav { position: relative; background: var(--bg); padding: 0 2rem; display: flex; justify-content: center; gap: 3rem; border-bottom: 1px solid var(--border); transition: background 0.3s, border-color 0.3s; }
+    .tab-btn { background: transparent; border: none; color: var(--text-muted); font-family: var(--font); font-size: 0.85rem; font-weight: 700; padding: 1rem 0; cursor: pointer; position: relative; text-transform: uppercase; letter-spacing: 0.05em; transition: 0.2s; }
+    .tab-btn.active { color: var(--leng); }
+    .tab-btn.active::after { content: ''; position: absolute; bottom: -1px; left: 0; right: 0; height: 2px; background: var(--leng); }
+
+    /* INTERRUPTORES */
+    .theme-toggle-wrapper { position: absolute; left: 2rem; top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: 0.8rem; }
+    .theme-toggle-label { font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; transition: 0.3s; }
+    
+    .slep-toggle-wrapper { position: absolute; right: 2rem; top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: 0.8rem; }
+    .slep-toggle-label { font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; transition: 0.3s; }
+
+    .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--surface-2); border: 1px solid var(--border); transition: .4s; border-radius: 34px; }
+    .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: var(--text-muted); transition: .4s; border-radius: 50%; }
+    input:checked + .slider { background-color: rgba(56, 189, 248, 0.15); border-color: var(--leng); }
+    input:checked + .slider:before { transform: translateX(20px); background-color: var(--leng); }
+
+    .main { max-width: 1560px; margin: 0 auto; padding: 1.5rem 2rem; display: flex; flex-direction: column; gap: 1.5rem; }
+    
+    /* TOM SELECT CUSTOMIZATION */
+    .ts-wrapper.multi .ts-control { background: transparent !important; border: none !important; border-bottom: 1px solid transparent !important; padding: 6px 0 !important; height: 34px !important; box-shadow: none !important; cursor: pointer !important; overflow: hidden; }
+    .ts-wrapper.multi.focus .ts-control { border-bottom: 1px solid var(--leng) !important; }
+    .ts-wrapper.multi .ts-control > div.item { display: none !important; }
+    .ts-control input { color: var(--text) !important; font-size: 0.85rem; }
+    .ts-wrapper.multi:not(.focus) .ts-control input::placeholder { color: transparent !important; }
+    .ts-dropdown { background: var(--surface-2) !important; border: 1px solid var(--border) !important; color: var(--text) !important; z-index: 2000; }
+    .btn-clear-text { background: transparent; border: none; color: var(--text-muted); font-size: 0.8rem; font-weight: 800; cursor: pointer; margin-left: auto; text-transform: uppercase; }
+
+    /* CHIPS FILTROS ACTIVOS */
+    .active-filters-tray { display: block; padding-top: 0.4rem; }
+    .filter-group-tag { display: inline-flex; align-items: center; margin: 0 0.5rem 0.5rem 0; background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+    .filter-group-label { padding: 4px 8px; font-size: 0.65rem; font-weight: 800; color: var(--leng); background: rgba(56,189,248,0.05); border-right: 1px solid var(--border); cursor: pointer; }
+    .filter-value-tag { padding: 4px 10px; font-size: 0.75rem; color: var(--text); cursor: pointer; display: flex; align-items: center; border-right: 1px solid var(--border); }
+    .filter-value-tag:hover { text-decoration: line-through; color: var(--red); }
+
+    /* KPIs y GRÁFICOS */
+    .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+    .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 1.1rem 1.25rem; position: relative; transition: background 0.3s, border-color 0.3s; }
+    .kpi::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: var(--kpi-c); opacity: 0.5; }
+    .kpi-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem; }
+    .kpi-sublabel { font-size: 0.55rem; color: var(--text-muted); text-transform: none; display: block; margin-top: 2px; }
+    .kpi-val { font-family: var(--mono); font-size: 2rem; font-weight: 700; color: var(--kpi-c); }
+    .kpi-compare { font-size: 0.72rem; font-weight: bold; margin-top: 4px; display: block; }
+
+    .charts-grid { display: grid; grid-template-columns: 1fr; gap: 1.25rem; }
+    .chart-block { display: flex; flex-direction: column; gap: 0.7rem; }
+    .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 1.25rem 1.4rem; min-height: 400px; display: flex; flex-direction: column; transition: background 0.3s, border-color 0.3s; }
+    .chart-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.1rem; flex-wrap: wrap; gap: 1rem; }
+    .chart-title { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); }
+    .chart-title span { color: var(--text); font-size: 0.85rem; display: block; margin-top: 0.15rem; text-transform: none; }
+    .chart-wrap { position: relative; flex: 1; min-height: 0; }
+    .full-width { grid-column: 1 / -1; }
+
+    .apexcharts-text { fill: var(--text-muted) !important; font-family: var(--font) !important; }
+    .apexcharts-legend-text { color: var(--text) !important; font-family: var(--font) !important; }
+    .apexcharts-tooltip { background: var(--surface) !important; border: 1px solid var(--border) !important; color: var(--text) !important; box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important; }
+    .apexcharts-tooltip-title { background: var(--surface-2) !important; border-bottom: 1px solid var(--border) !important; font-family: var(--font) !important; font-weight: bold !important; }
+
+    @media (max-width: 1024px) { .kpi-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<div id="login-overlay">
+  <div class="login-card">
+    <img src="logo3.png" alt="Logo SLEP">
+    <h2>Acceso Unidad Educativa</h2>
+    <p>Ingresa tu usuario y contraseña para visualizar los resultados DIA Parvularia.</p>
+    
+    <div class="input-group">
+      <label>USUARIO</label>
+      <input type="text" id="login-user" placeholder="RBD">
+    </div>
+    
+    <div class="input-group">
+      <label>Contraseña</label>
+      <input type="password" id="login-pass" placeholder="••••••••">
+    </div>
+    
+    <button class="btn-login" onclick="handleLogin()">Ingresar al Sistema</button>
+    <div id="login-error">Credenciales incorrectas</div>
+  </div>
+</div>
+
+<div class="sticky-top-section" id="navbar" style="display:none;">
+  <header class="header">
+    <div class="header-info">
+      <img src="logo3.png" alt="Logo" style="height: 55px; width: auto; object-fit: contain; margin-right: 1rem;">    
+      <div>
+        <div style="font-size: 1rem; font-weight: 800;">Dashboard resultados DIA Parvularia</div>
+        <div style="font-size: 0.75rem; color: var(--text-muted);">SLEP Del Pino</div>
+      </div>
+    </div>
+    <div id="active-filters-tray" class="active-filters-tray" style="display: none; float: right;"></div>
+  </header>
+
+  <div class="filter-bar">
+    <div class="filter-group" style="flex: 1.5;" data-label="UNIDAD EDUCATIVA ▾"><select id="f-rbd" multiple placeholder="Buscar unidad educativa..."></select></div>
+    
+    <div id="static-rbd-container" class="filter-group" style="display:none; flex: 1.5;">
+      <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid var(--leng); border-radius: 8px; padding: 0 12px; height: 34px; display: flex; align-items: center; overflow: hidden;">
+        <span style="font-size: 0.75rem; font-weight: 800; color: var(--text-muted); margin-right: 8px; letter-spacing: 0.05em;">UNIDAD EDUCATIVA:</span>
+        <span id="static-rbd-text" style="font-size: 0.85rem; font-weight: 700; color: var(--leng); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></span>
+      </div>
+    </div>
+
+    <div class="filter-group" style="flex: 0.8;" data-label="NIVEL ▾"><select id="f-nivel" multiple placeholder="Nivel..."></select></div>
+    <div class="filter-group" style="flex: 0.8;" data-label="CURSO ▾"><select id="f-curso" multiple placeholder="Curso..."></select></div>
+    <div class="filter-group" style="flex: 1.2;" data-label="ÁMBITO ▾"><select id="f-ambito" multiple placeholder="Ámbito..."></select></div>
+    <div class="filter-group" style="flex: 1.2;" data-label="NÚCLEO ▾"><select id="f-nucleo" multiple placeholder="Núcleo..."></select></div>
+    <div class="filter-group" style="flex: 0.8;" data-label="O.A. ▾"><select id="f-oa" multiple placeholder="Objetivo..."></select></div>
+    
+    <button class="btn-clear-text" id="btn-clear">Limpiar Filtros</button>
+  </div>
+
+  <nav class="tabs-nav">
+    <div class="theme-toggle-wrapper">
+      <span class="theme-toggle-label" id="theme-label-text">Tema Claro</span>
+      <label class="switch">
+        <input type="checkbox" id="theme-toggle" onchange="toggleTheme()">
+        <span class="slider round"></span>
+      </label>
+    </div>
+
+    <button class="tab-btn active" onclick="showTab('tab-general', event)">Visión General</button>
+    <button class="tab-btn" onclick="showTab('tab-detallado', event)">Análisis Detallado</button>
+    
+    <div class="slep-toggle-wrapper">
+      <span class="slep-toggle-label" id="slep-label-text">PROMEDIO SLEP</span>
+      <label class="switch">
+        <input type="checkbox" id="slep-toggle" onchange="toggleSlep()">
+        <span class="slider round"></span>
+      </label>
+    </div>
+  </nav>
+</div>
+
+<main class="main" id="dashboard" style="display:none;">
+  <div id="tab-general" class="tab-content">
+    <div class="kpi-grid" style="margin-bottom: 1.5rem;">
+      <div class="kpi" style="--kpi-c: var(--text)">
+        <div class="kpi-label">Total Estudiantes Evaluados</div>
+        <div class="kpi-val" id="kpi-total">—</div>
+        <div class="kpi-compare" id="kpi-total-slep" style="color: var(--text-muted); display:none;"></div>
+      </div>
+      <div class="kpi" style="--kpi-c: var(--total)">
+        <div class="kpi-label">% Logro Esperado <span class="kpi-sublabel">(Consolidando + Profundizando)</span></div>
+        <div class="kpi-val" id="kpi-logro">—</div>
+        <div class="kpi-compare" id="kpi-logro-slep" style="display:none;"></div>
+      </div>
+      <div class="kpi" style="--kpi-c: var(--red)">
+        <div class="kpi-label">% Nivel de Riesgo <span class="kpi-sublabel">(No Evaluado + Comenzando)</span></div>
+        <div class="kpi-val" id="kpi-riesgo">—</div>
+        <div class="kpi-compare" id="kpi-riesgo-slep" style="display:none;"></div>
+      </div>
+    </div>
+    
+    <div class="charts-grid">
+      <div class="chart-block full-width">
+        <div class="chart-card">
+          <div class="chart-header"><div class="chart-title">Distribución Global<span>Proporción de categorías en la selección actual</span></div></div>
+          <div class="chart-wrap" id="chart-donut" style="min-height: 400px;"></div>
+        </div>
+      </div>
+      
+      <div class="chart-block full-width">
+        <div class="chart-card">
+          <div class="chart-header"><div class="chart-title">% Logro por Núcleo<span>(Consolidando + Profundizando)</span></div></div>
+          <div class="chart-wrap" id="chart-radar" style="min-height: 600px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-detallado" class="tab-content" style="display:none;">
+    <div class="charts-grid">
+      
+      <div class="chart-block full-width">
+        <div class="chart-card">
+          <div class="chart-header"><div class="chart-title">Desglose por Rúbrica Evaluada<span>Composición al 100% por Categoría de Logro</span></div></div>
+          <div class="chart-wrap" style="min-height: 450px;" id="chart-stacked"></div>
+        </div>
+      </div>
+      
+      <div class="chart-block full-width">
+        <div class="chart-card">
+          <div class="chart-header"><div class="chart-title">Mapa de Calor: Alertas por Curso<span>Muestra el % de estudiantes en "No Evaluado" o "Comenzando" (Rojo = Mayor Riesgo)</span></div></div>
+          <div class="chart-wrap" style="min-height: 500px;" id="chart-heatmap"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<script>
+// --- CONSTANTES Y MAPEO ---
+const I = { RBD: 0, NIVEL: 1, CURSO: 2, RUBRICA: 3, OA: 4, NUCLEO: 5, AMBITO: 6, NO_EV: 7, COM: 8, DES: 9, CON: 10, PRO: 11 };
+const CATEGORIAS = ["No Evaluado", "Comenzando", "Desarrollando", "Consolidando", "Profundizando"];
+
+function getThemeColors() {
+    const isDark = document.body.classList.contains('dark-theme');
+    const style = getComputedStyle(document.body);
+    return {
+        text: style.getPropertyValue('--text-muted').trim(),
+        grid: isDark ? '#30363d' : '#e5e7eb',
+        surface: style.getPropertyValue('--surface').trim(),
+        palette: [
+            style.getPropertyValue('--c-noev').trim(),
+            style.getPropertyValue('--c-com').trim(),
+            style.getPropertyValue('--c-des').trim(),
+            style.getPropertyValue('--c-con').trim(),
+            style.getPropertyValue('--c-pro').trim()
+        ]
+    };
+}
+
+let DATA_RAW = null;
+let charts = {};
+let ts = {};
+let IS_ADMIN = false;
+let SESSION_RBD = null;
+let showSlep = false; // Estado del toggle comparativo territorial
+
+// --- INICIALIZACIÓN ---
+async function initData() {
+  try {
+    const res = await fetch('datos.json');
+    DATA_RAW = await res.json();
+    setupFiltersStable();
+  } catch (e) { 
+    console.error("Error cargando JSON.", e); 
+  }
+}
+
+// --- LOGIN ---
+function handleLogin() {
+  const user = document.getElementById('login-user').value.trim();
+  const pass = document.getElementById('login-pass').value.trim();
+  const errorEl = document.getElementById('login-error');
+
+  if (user === 'admin' && pass === 'slep2026') {
+    IS_ADMIN = true;
+    startDashboard();
+    return;
+  }
+
+  const rbdNum = parseInt(user, 10);
+  if (!isNaN(rbdNum) && pass === String((rbdNum * 2) + 30)) {
+    const rbdFound = DATA_RAW.maps[I.RBD].some(text => text.startsWith(user));
+    if (rbdFound) {
+      IS_ADMIN = false;
+      SESSION_RBD = user;
+      startDashboard();
+      return;
+    }
+  }
+  errorEl.style.display = 'block';
+}
+
+function startDashboard() {
+  document.getElementById('login-overlay').style.display = 'none';
+  document.getElementById('navbar').style.display = 'block';
+  document.getElementById('dashboard').style.display = 'block';
+
+  if (!IS_ADMIN && SESSION_RBD) {
+    const rbdId = DATA_RAW.maps[I.RBD].findIndex(text => text.startsWith(SESSION_RBD));
+    if (rbdId !== -1) {
+      ts.rbd.setValue([String(rbdId)]);
+      document.getElementById('group-rbd').style.display = 'none';
+      document.getElementById('static-rbd-container').style.display = 'block';
+      document.getElementById('static-rbd-text').innerText = DATA_RAW.maps[I.RBD][rbdId];
+    }
+  }
+  update();
+}
+
+// --- NAVEGACIÓN, TEMA Y TOGGLE ---
+function showTab(tabId, e) {
+  document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById(tabId).style.display = 'block';
+  if(e) e.currentTarget.classList.add('active');
+  window.dispatchEvent(new Event('resize')); 
+}
+
+function toggleTheme() {
+  const checkbox = document.getElementById('theme-toggle');
+  const labelText = document.getElementById('theme-label-text');
+  
+  if (checkbox.checked) {
+    document.body.classList.add('dark-theme');
+    labelText.innerText = 'Tema Oscuro';
+    labelText.style.color = 'var(--text)';
+  } else {
+    document.body.classList.remove('dark-theme');
+    labelText.innerText = 'Tema Claro';
+    labelText.style.color = 'var(--text-muted)';
+  }
+  
+  const tColors = getThemeColors();
+  Object.values(charts).forEach(chart => {
+      chart.updateOptions({
+          chart: { foreColor: tColors.text },
+          grid: { borderColor: tColors.grid },
+          tooltip: { theme: document.body.classList.contains('dark-theme') ? 'dark' : 'light' }
+      });
+  });
+}
+
+function toggleSlep() {
+  showSlep = document.getElementById('slep-toggle').checked;
+  document.getElementById('slep-label-text').style.color = showSlep ? 'var(--leng)' : 'var(--text-muted)';
+  update();
+}
+
+// --- FILTROS (TOM SELECT) CON ORDEN NATURAL ---
+function setupFiltersStable() {
+  const selectConfig = ['rbd', 'nivel', 'curso', 'ambito', 'nucleo', 'oa'];
+  
+  selectConfig.forEach(k => {
+    let sortRules = [ {field: 'num_index', direction: 'asc'}, {field: 'text', direction: 'asc'} ];
+    
+    ts[k] = new TomSelect(`#f-${k}`, { 
+        plugins: ['checkbox_options'], 
+        maxOptions: 300, 
+        closeAfterSelect: false, 
+        sortField: sortRules, 
+        onChange: () => update() 
+    });
+    
+    DATA_RAW.maps[I[k.toUpperCase()]].forEach((text, index) => {
+      if (text && text.trim() !== '') {
+        let itemData = { value: String(index), text: text };
+        let m = text.match(/\d+/); 
+        itemData.num_index = m ? parseInt(m[0], 10) : 999999; 
+        ts[k].addOption(itemData);
+      }
+    });
+  });
+
+  document.getElementById('btn-clear').onclick = () => { 
+    Object.keys(ts).forEach(k => {
+      if (!IS_ADMIN && k === 'rbd') return; 
+      ts[k].clear(true); 
+    });
+    update(); 
+  };
+}
+
+function renderActiveFiltersTray() {
+  const tray = document.getElementById('active-filters-tray');
+  tray.innerHTML = ''; let hasFilters = false;
+  Object.keys(ts).forEach(key => {
+    const selected = ts[key].getValue();
+    if (selected.length > 0) {
+      if (!IS_ADMIN && key === 'rbd') return; 
+      hasFilters = true;
+      const group = document.createElement('div'); group.className = 'filter-group-tag';
+      const label = document.createElement('span'); label.className = 'filter-group-label'; label.innerText = key.toUpperCase();
+      label.onclick = () => { ts[key].clear(true); update(); };
+      group.appendChild(label);
+      selected.forEach(val => {
+        const tag = document.createElement('span'); tag.className = 'filter-value-tag'; tag.innerText = ts[key].options[val].text;
+        tag.onclick = () => { ts[key].removeItem(val); }; group.appendChild(tag);
+      });
+      tray.appendChild(group);
+    }
+  });
+  tray.style.display = hasFilters ? 'block' : 'none';
+}
+
+// --- MOTOR DE DATOS Y PROCESAMIENTO ---
+function update() {
+  const f = {}; Object.keys(ts).forEach(k => f[k] = ts[k].getValue());
+  renderActiveFiltersTray();
+
+  // Matrices Locales (Filtro completo con RBD)
+  let sums = [0, 0, 0, 0, 0];
+  let dataRubrica = {};
+  let dataNucleo = {};
+  let dataHeatmap = {};
+  let aulasLocal = {}; // NUEVO: Diccionario para capturar el N real local
+
+  // Matrices Territoriales (Ignoran RBD, pero respetan Nivel, Curso, OA, etc.)
+  let slepSums = [0, 0, 0, 0, 0];
+  let dataNucleoSlep = {};
+  let dataHeatmapSlep = {};
+  let aulasSlep = {}; // NUEVO: Diccionario para capturar el N real del SLEP
+
+  DATA_RAW.rows.forEach(r => {
+    // 1. Evaluar filtros globales del territorio (Ignora RBD)
+    if (f.nivel.length && !f.nivel.includes(String(r[I.NIVEL]))) return;
+    if (f.curso.length && !f.curso.includes(String(r[I.CURSO]))) return;
+    if (f.ambito.length && !f.ambito.includes(String(r[I.AMBITO]))) return;
+    if (f.nucleo.length && !f.nucleo.includes(String(r[I.NUCLEO]))) return;
+    if (f.oa.length && !f.oa.includes(String(r[I.OA]))) return;
+
+    // Datos descriptivos decodificados
+    const rubV = DATA_RAW.maps[I.RUBRICA][r[I.RUBRICA]];
+    const nucV = DATA_RAW.maps[I.NUCLEO][r[I.NUCLEO]];
+    const curV = `${DATA_RAW.maps[I.NIVEL][r[I.NIVEL]]} ${DATA_RAW.maps[I.CURSO][r[I.CURSO]]}`;
+
+    const nE = r[I.NO_EV], com = r[I.COM], des = r[I.DES], con = r[I.CON], pro = r[I.PRO];
+    const totRow = nE + com + des + con + pro;
+    const logroRow = con + pro;
+    const alertaRow = nE + com;
+
+    // --- NUEVO LÓGICA: Captura de Aulas Únicas (SLEP) ---
+    // Creamos la llave única, ej: "9598-NT1-A"
+    const aulaKey = r[I.RBD] + "-" + r[I.NIVEL] + "-" + r[I.CURSO];
+    if (!aulasSlep[aulaKey]) aulasSlep[aulaKey] = 0;
+    if (totRow > aulasSlep[aulaKey]) aulasSlep[aulaKey] = totRow; // Guarda el N máximo detectado
+
+    // Acumular matriz territorial SLEP
+    slepSums[0] += nE; slepSums[1] += com; slepSums[2] += des; slepSums[3] += con; slepSums[4] += pro;
+    
+    if (!dataNucleoSlep[nucV]) dataNucleoSlep[nucV] = { logro: 0, total: 0 };
+    dataNucleoSlep[nucV].logro += logroRow;
+    dataNucleoSlep[nucV].total += totRow;
+
+    if (!dataHeatmapSlep[rubV]) dataHeatmapSlep[rubV] = { alerta: 0, total: 0 };
+    dataHeatmapSlep[rubV].alerta += alertaRow;
+    dataHeatmapSlep[rubV].total += totRow;
+
+    // 2. Evaluar filtro específico del Establecimiento (RBD)
+    if (f.rbd.length && !f.rbd.includes(String(r[I.RBD]))) return;
+
+    // --- NUEVA LÓGICA: Captura de Aulas Únicas (Local) ---
+    if (!aulasLocal[aulaKey]) aulasLocal[aulaKey] = 0;
+    if (totRow > aulasLocal[aulaKey]) aulasLocal[aulaKey] = totRow; // Guarda el N máximo detectado
+
+    // Acumular matriz local (Mi Escuela)
+    sums[0] += nE; sums[1] += com; sums[2] += des; sums[3] += con; sums[4] += pro;
+
+    if (!dataRubrica[rubV]) dataRubrica[rubV] = [0,0,0,0,0];
+    dataRubrica[rubV][0] += nE; dataRubrica[rubV][1] += com;
+    dataRubrica[rubV][2] += des; dataRubrica[rubV][3] += con; dataRubrica[rubV][4] += pro;
+
+    if (!dataNucleo[nucV]) dataNucleo[nucV] = { logro: 0, total: 0 };
+    dataNucleo[nucV].logro += logroRow;
+    dataNucleo[nucV].total += totRow;
+
+    if (!dataHeatmap[rubV]) dataHeatmap[rubV] = {};
+    if (!dataHeatmap[rubV][curV]) dataHeatmap[rubV][curV] = { alerta: 0, total: 0 };
+    dataHeatmap[rubV][curV].alerta += alertaRow;
+    dataHeatmap[rubV][curV].total += totRow;
+  });
+
+  // --- NUEVA LÓGICA: Sumamos los máximos de cada aula para tener el N Real ---
+  const trueTotalLocal = Object.values(aulasLocal).reduce((sum, val) => sum + val, 0);
+  const trueTotalSlep = Object.values(aulasSlep).reduce((sum, val) => sum + val, 0);
+
+  // Enviamos los nuevos totales a los KPIs
+  renderKPIs(sums, slepSums, trueTotalLocal, trueTotalSlep);
+  renderDonut(sums, slepSums);
+  renderStacked(dataRubrica);
+  renderRadar(dataNucleo, dataNucleoSlep);
+  renderHeatmap(dataHeatmap, dataHeatmapSlep);
+}
+
+// --- DIBUJAR KPIs ---
+function renderKPIs(sums, slepSums, trueTotalLocal, trueTotalSlep) {
+  // Las masas gigantes de evaluaciones para dividir los porcentajes
+  const totalEvals = sums.reduce((a, b) => a + b, 0);
+  const totalEvalsSlep = slepSums.reduce((a, b) => a + b, 0);
+  
+  // 1. Total Estudiantes Evaluados (Usando el N REAL)
+  document.getElementById('kpi-total').innerText = trueTotalLocal.toLocaleString('es-CL');
+  
+  // 2. % Logro Esperado (Usando la masa de evaluaciones)
+  const logro = totalEvals > 0 ? (sums[3] + sums[4]) / totalEvals * 100 : 0;
+  const logroSlep = totalEvalsSlep > 0 ? (slepSums[3] + slepSums[4]) / totalEvalsSlep * 100 : 0;
+  document.getElementById('kpi-logro').innerText = logro.toFixed(1) + '%';
+  
+  // 3. % Nivel de Riesgo (Usando la masa de evaluaciones)
+  const riesgo = totalEvals > 0 ? (sums[0] + sums[1]) / totalEvals * 100 : 0;
+  const riesgoSlep = totalEvalsSlep > 0 ? (slepSums[0] + slepSums[1]) / totalEvalsSlep * 100 : 0;
+  document.getElementById('kpi-riesgo').innerText = riesgo.toFixed(1) + '%';
+
+  // Control de visibilidad comparativa territorial (Toggle)
+  const elements = {
+    total: document.getElementById('kpi-total-slep'),
+    logro: document.getElementById('kpi-logro-slep'),
+    riesgo: document.getElementById('kpi-riesgo-slep')
+  };
+
+  if (showSlep) {
+    elements.total.style.display = 'block';
+    // Muestra el N real del SLEP
+    elements.total.innerText = `Territorio: ${trueTotalSlep.toLocaleString('es-CL')} est.`;
+    
+    // Brecha Logro
+    elements.logro.style.display = 'block';
+    const diffLogro = logro - logroSlep;
+    elements.logro.innerText = `${diffLogro >= 0 ? '↑ +' : '↓ '}${diffLogro.toFixed(1)}% respecto al SLEP`;
+    elements.logro.style.color = diffLogro >= 0 ? 'var(--total)' : 'var(--red)';
+
+    // Brecha Riesgo (Invertido: Menos riesgo es mejor)
+    elements.riesgo.style.display = 'block';
+    const diffRiesgo = riesgo - riesgoSlep;
+    elements.riesgo.innerText = `${diffRiesgo <= 0 ? '↓ ' : '↑ +'}${diffRiesgo.toFixed(1)}% respecto al SLEP`;
+    elements.riesgo.style.color = diffRiesgo <= 0 ? 'var(--total)' : 'var(--red)';
+  } else {
+    elements.total.style.display = 'none';
+    elements.logro.style.display = 'none';
+    elements.riesgo.style.display = 'none';
+  }
+}
+
+function safeChartRender(id, options) {
+    if (charts[id]) charts[id].destroy();
+    charts[id] = new ApexCharts(document.querySelector(`#${id}`), options);
+    charts[id].render();
+}
+
+// --- DIBUJAR GRÁFICOS ---
+function renderDonut(sums, slepSums) {
+    const tColors = getThemeColors();
+    
+    // Calculamos el total de estudiantes del SLEP para poder sacar sus porcentajes
+    const totalSlep = slepSums ? slepSums.reduce((a, b) => a + b, 0) : 0;
+
+    const options = {
+        series: sums,
+        chart: { type: 'donut', height: 400, foreColor: tColors.text, background: 'transparent' },
+        labels: CATEGORIAS,
+        colors: tColors.palette,
+        dataLabels: { 
+            enabled: true, 
+            formatter: val => val.toFixed(1) + "%", 
+            style: { fontSize: '14px', fontFamily: 'var(--font)', fontWeight: 800 }, 
+            dropShadow: { enabled: false } 
+        },
+        legend: { 
+            position: 'right', 
+            fontSize: '14px', 
+            fontFamily: 'var(--font)', 
+            itemMargin: { vertical: 5 },
+            // AQUÍ OCURRE LA MAGIA DEL TEXTO COMPARATIVO
+            formatter: function(seriesName, opts) {
+                // Cálculo de mi establecimiento
+                const total = opts.w.globals.seriesTotals.reduce((a, b) => a + b, 0);
+                const val = opts.w.globals.seriesTotals[opts.seriesIndex];
+                const percent = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
+                
+                // Si el Toggle SLEP está encendido, agregamos el texto extra
+                if (showSlep && slepSums && totalSlep > 0) {
+                    const valSlep = slepSums[opts.seriesIndex];
+                    const percentSlep = ((valSlep / totalSlep) * 100).toFixed(1);
+                    return `${seriesName} (${percent}%)  |  SLEP: ${percentSlep}%`;
+                }
+                
+                // Si está apagado, mostramos el formato normal
+                return `${seriesName} (${percent}%)`;
+            }
+        },
+        stroke: { show: false },
+        tooltip: { theme: document.body.classList.contains('dark-theme') ? 'dark' : 'light' },
+        responsive: [{ breakpoint: 768, options: { legend: { position: 'bottom' } } }]
+    };
+    safeChartRender('chart-donut', options);
+}
+
+function renderStacked(dataRubrica) {
+    const tColors = getThemeColors();
+    
+    // ORDEN NATURAL ESTRICTO EN BARRAS APILADAS
+    const rubricas = Object.keys(dataRubrica).sort((a, b) => {
+        const numA = parseInt(a.match(/\d+/) ? a.match(/\d+/)[0] : 0);
+        const numB = parseInt(b.match(/\d+/) ? b.match(/\d+/)[0] : 0);
+        if (numA !== numB) return numA - numB;
+        return a.localeCompare(b);
+    });
+    
+    if(rubricas.length === 0) {
+        document.getElementById('chart-stacked').innerHTML = `<div class="empty-state-container" style="padding:4rem; text-align:center;">Filtros sin resultados</div>`;
+        return;
+    }
+
+    const series = CATEGORIAS.map((cat, i) => ({
+        name: cat,
+        data: rubricas.map(r => dataRubrica[r][i])
+    }));
+
+    const options = {
+        series: series,
+        chart: { type: 'bar', height: Math.max(450, rubricas.length * 35), stacked: true, stackType: '100%', foreColor: tColors.text, background: 'transparent', toolbar: {show: false} },
+        plotOptions: { bar: { horizontal: true, borderRadius: 2 } },
+        colors: tColors.palette,
+        xaxis: { categories: rubricas, labels: { formatter: (val) => { return val + "%" } } },
+        yaxis: { labels: { maxWidth: 300, style: { fontSize: '12px' } } },
+        grid: { borderColor: tColors.grid },
+        tooltip: { y: { formatter: val => val + " estudiantes" }, theme: document.body.classList.contains('dark-theme') ? 'dark' : 'light' },
+        legend: { position: 'top', horizontalAlign: 'left' }
+    };
+    safeChartRender('chart-stacked', options);
+}
+
+function renderRadar(dataNucleo, dataNucleoSlep) {
+    const tColors = getThemeColors();
+    const nucleos = Object.keys(dataNucleo).sort();
+    
+    const porcentajesLocales = nucleos.map(n => {
+        const tot = dataNucleo[n].total;
+        return tot > 0 ? parseFloat(((dataNucleo[n].logro / tot) * 100).toFixed(1)) : 0;
+    });
+
+    // Inyección de la serie territorial
+    let datasets = [{ name: '% Unidad Educativa', data: porcentajesLocales }];
+    let radarColors = ['var(--leng)'];
+    let markerColors = [tColors.surface];
+
+    if (showSlep) {
+        const porcentajesSlep = nucleos.map(n => {
+            const cell = dataNucleoSlep[n];
+            return cell && cell.total > 0 ? parseFloat(((cell.logro / cell.total) * 100).toFixed(1)) : 0;
+        });
+        datasets.push({ name: '% Promedio SLEP', data: porcentajesSlep });
+        radarColors.push('var(--purple)'); // Línea territorial morada
+        markerColors.push('transparent');
+    }
+
+    const maxVal = Math.max(...porcentajesLocales, showSlep ? Math.max(...datasets[1].data, 10) : 10);
+    const suggestedMax = Math.ceil(maxVal / 10) * 10 + 5;
+
+    const options = {
+        series: datasets,
+        chart: { type: 'radar', height: 600, foreColor: tColors.text, background: 'transparent', toolbar: {show: false} },
+        labels: nucleos,
+        stroke: { width: 3, colors: radarColors, dashArray: [0, showSlep ? 4 : 0] }, // Línea punteada para el SLEP
+        fill: { opacity: [0.2, 0.05] },
+        colors: radarColors,
+        markers: { size: 5, colors: markerColors, strokeColors: radarColors, strokeWidth: 2 },
+        yaxis: { 
+            show: true, 
+            min: 0, 
+            max: suggestedMax, 
+            tickAmount: 5,
+            labels: { formatter: val => val.toFixed(0) + '%', style: { colors: tColors.text, fontSize: '11px' } }
+        },
+        dataLabels: { enabled: false },
+        plotOptions: { radar: { polygons: { strokeColors: tColors.grid, strokeWidth: 1, connectorColors: tColors.grid } } },
+        tooltip: { theme: document.body.classList.contains('dark-theme') ? 'dark' : 'light', y: { formatter: val => val.toFixed(1) + '%' } }
+    };
+    safeChartRender('chart-radar', options);
+}
+
+function renderHeatmap(dataHeatmap, dataHeatmapSlep) {
+    const tColors = getThemeColors();
+    const isDark = document.body.classList.contains('dark-theme');
+    
+    let cursosSet = new Set();
+    Object.keys(dataHeatmap).forEach(rub => {
+        Object.keys(dataHeatmap[rub]).forEach(c => cursosSet.add(c));
+    });
+    let cursos = Array.from(cursosSet).sort();
+
+    // ORDEN NATURAL ESTRICTO EN EL HEATMAP
+    const rubricasOrdenadas = Object.keys(dataHeatmap).sort((a, b) => {
+        const numA = parseInt(a.match(/\d+/) ? a.match(/\d+/)[0] : 0);
+        const numB = parseInt(b.match(/\d+/) ? b.match(/\d+/)[0] : 0);
+        if (numA !== numB) return numA - numB;
+        return a.localeCompare(b);
+    }).reverse(); 
+
+    if(rubricasOrdenadas.length === 0 || (cursos.length === 0 && !showSlep)) {
+        document.getElementById('chart-heatmap').innerHTML = `<div class="empty-state-container" style="padding:4rem; text-align:center;">Filtros sin resultados</div>`;
+        return;
+    }
+
+    // Inyección de la columna Promedio SLEP al final de los ejes
+    if (showSlep && rubricasOrdenadas.length > 0) {
+        cursos.push("PROMEDIO SLEP 🌎");
+    }
+
+    const series = rubricasOrdenadas.map(rubrica => {
+        const data = cursos.map(curso => {
+            if (curso === "PROMEDIO SLEP 🌎") {
+                const cellSlep = dataHeatmapSlep[rubrica];
+                const valSlep = cellSlep && cellSlep.total > 0 ? ((cellSlep.alerta / cellSlep.total) * 100).toFixed(0) : 0;
+                return { x: curso, y: parseInt(valSlep) };
+            } else {
+                const cell = dataHeatmap[rubrica][curso];
+                const val = cell && cell.total > 0 ? ((cell.alerta / cell.total) * 100).toFixed(0) : 0;
+                return { x: curso, y: parseInt(val) };
+            }
+        });
+        return { name: rubrica, data: data };
+    });
+
+    const options = {
+        series: series,
+        chart: { type: 'heatmap', height: Math.max(500, rubricasOrdenadas.length * 35), foreColor: tColors.text, background: 'transparent', toolbar: {show: false} },
+        plotOptions: {
+            heatmap: {
+                shadeIntensity: 0.5,
+                useFillColorAsStroke: false,
+                colorScale: {
+                    ranges: [
+                        { from: 0, to: 20, color: isDark ? '#21262d' : '#f3f4f6', name: 'Baja Alerta (<20%)' },
+                        { from: 21, to: 50, color: '#fca5a5', name: 'Alerta Media (21-50%)' },
+                        { from: 51, to: 100, color: '#dc2626', name: 'Alerta Crítica (>50%)' }
+                    ]
+                }
+            }
+        },
+        dataLabels: { 
+            enabled: true, 
+            formatter: val => val + "%",
+            style: { colors: [isDark ? '#fff' : '#000'], fontSize: '11px' } 
+        },
+        stroke: { width: 1, colors: [tColors.grid] },
+        xaxis: { 
+            type: 'category', 
+            position: 'top', 
+            labels: { trim: false, style: { fontWeight: 800 } },
+            axisBorder: { show: false },
+            axisTicks: { show: false }
+        },
+        yaxis: { labels: { maxWidth: 300, style: { fontSize: '11px' } } },
+        tooltip: { theme: isDark ? 'dark' : 'light', y: { formatter: val => val + "%" } }
+    };
+    safeChartRender('chart-heatmap', options);
+}
+
+initData();
+</script>
+</body>
+</html>
