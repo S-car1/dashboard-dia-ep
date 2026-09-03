@@ -142,6 +142,9 @@
     .apexcharts-tooltip { background: var(--surface) !important; border: 1px solid var(--border) !important; color: var(--text) !important; box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important; }
     .apexcharts-tooltip-title { background: var(--surface-2) !important; border-bottom: 1px solid var(--border) !important; font-family: var(--font) !important; font-weight: bold !important; }
 
+    .btn-reset-series { background: transparent; border: 1px solid var(--border); color: var(--text-muted); font-family: var(--font); font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; padding: 0.35rem 0.7rem; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+    .btn-reset-series:hover { color: var(--leng); border-color: var(--leng); }
+
     @media (max-width: 1024px) { .kpi-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
@@ -244,14 +247,14 @@
     <div class="charts-grid">
       <div class="chart-block full-width">
         <div class="chart-card">
-          <div class="chart-header"><div class="chart-title">Distribución Global<span>Proporción de categorías en la selección actual</span></div></div>
+          <div class="chart-header"><div class="chart-title">Distribución Global<span>Proporción de categorías en la selección actual</span></div><button class="btn-reset-series" onclick="resetChartSeries('chart-donut')" title="Doble clic en la leyenda también restablece">Restablecer series</button></div>
           <div class="chart-wrap" id="chart-donut" style="min-height: 400px;"></div>
         </div>
       </div>
       
       <div class="chart-block full-width">
         <div class="chart-card">
-          <div class="chart-header"><div class="chart-title">% Logro por Núcleo<span>(Consolidando + Profundizando)</span></div></div>
+          <div class="chart-header"><div class="chart-title">% Logro por Núcleo<span>(Consolidando + Profundizando)</span></div><button class="btn-reset-series" onclick="resetChartSeries('chart-radar')" title="Doble clic en la leyenda también restablece">Restablecer series</button></div>
           <div class="chart-wrap" id="chart-radar" style="min-height: 600px;"></div>
         </div>
       </div>
@@ -263,14 +266,14 @@
       
       <div class="chart-block full-width">
         <div class="chart-card">
-          <div class="chart-header"><div class="chart-title">Desglose por Rúbrica Evaluada<span>Composición al 100% por Categoría de Logro</span></div></div>
+          <div class="chart-header"><div class="chart-title">Desglose por Rúbrica Evaluada<span>Composición al 100% por Categoría de Logro</span></div><button class="btn-reset-series" onclick="resetChartSeries('chart-stacked')" title="Doble clic en la leyenda también restablece">Restablecer series</button></div>
           <div class="chart-wrap" style="min-height: 450px;" id="chart-stacked"></div>
         </div>
       </div>
       
       <div class="chart-block full-width">
         <div class="chart-card">
-          <div class="chart-header"><div class="chart-title">Mapa de Calor: Alertas por Curso<span>Muestra el % de estudiantes en "No Evaluado" o "Comenzando" (Rojo = Mayor Riesgo)</span></div></div>
+          <div class="chart-header"><div class="chart-title">Mapa de Calor: Alertas por Curso<span>Muestra el % de estudiantes en "No Evaluado" o "Comenzando" (Rojo = Mayor Riesgo)</span></div><button class="btn-reset-series" onclick="resetChartSeries('chart-heatmap')" title="Doble clic en la leyenda también restablece">Restablecer series</button></div>
           <div class="chart-wrap" style="min-height: 500px;" id="chart-heatmap"></div>
         </div>
       </div>
@@ -411,8 +414,8 @@ function setupFiltersStable() {
         plugins: ['checkbox_options'], 
         maxOptions: 300, 
         closeAfterSelect: false, 
-        sortField: sortRules, 
-        onChange: () => update() 
+        sortField: sortRules,
+        onChange: () => debouncedUpdate()
     });
     
     DATA_RAW.maps[I[k.toUpperCase()]].forEach((text, index) => {
@@ -597,8 +600,27 @@ function renderKPIs(sums, slepSums, trueTotalLocal, trueTotalSlep) {
 function safeChartRender(id, options) {
     if (charts[id]) charts[id].destroy();
     charts[id] = new ApexCharts(document.querySelector(`#${id}`), options);
-    charts[id].render();
+    charts[id].render().then(() => {
+        // Doble clic sobre la leyenda restablece todas las series (además del botón "Restablecer series")
+        const legendEl = document.querySelector(`#${id} .apexcharts-legend`);
+        if (legendEl) legendEl.addEventListener('dblclick', () => resetChartSeries(id));
+    });
 }
+
+// --- RESTABLECER SERIES (ApexCharts) ---
+function resetChartSeries(id) {
+    if (charts[id]) charts[id].resetSeries(true, true);
+}
+
+// --- DEBOUNCE GENÉRICO ---
+function debounce(fn, wait) {
+  let t;
+  return function(...args) {
+    clearTimeout(t);
+    t = setTimeout(() => fn.apply(this, args), wait);
+  };
+}
+const debouncedUpdate = debounce(update, 150);
 
 // --- DIBUJAR GRÁFICOS ---
 function renderDonut(sums, slepSums) {
