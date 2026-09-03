@@ -306,6 +306,7 @@ function getThemeColors() {
 
 let DATA_RAW = null;
 let charts = {};
+let lastChartOptions = {}; // ultimas options usadas por safeChartRender, por id de chart
 let ts = {};
 let IS_ADMIN = false;
 let SESSION_RBD = null;
@@ -598,6 +599,7 @@ function renderKPIs(sums, slepSums, trueTotalLocal, trueTotalSlep) {
 }
 
 function safeChartRender(id, options) {
+    lastChartOptions[id] = options;
     if (charts[id]) charts[id].destroy();
     charts[id] = new ApexCharts(document.querySelector(`#${id}`), options);
     charts[id].render().then(() => {
@@ -609,7 +611,14 @@ function safeChartRender(id, options) {
 
 // --- RESTABLECER SERIES (ApexCharts) ---
 function resetChartSeries(id) {
-    if (charts[id]) charts[id].resetSeries(true, true);
+    // chart.resetSeries() no recalcula bien la geometria de las porciones en
+    // donut/pie (issue conocido de ApexCharts): las series quedan marcadas
+    // visibles de nuevo pero el path del slice oculto sigue vacio. Un
+    // re-render completo con las mismas options del ultimo render (mismo
+    // mecanismo que ya dispara cualquier cambio de filtro) es la forma
+    // confiable de garantizar la geometria correcta para los 4 tipos de
+    // grafico, sin depender de comportamiento interno de ApexCharts.
+    if (lastChartOptions[id]) safeChartRender(id, lastChartOptions[id]);
 }
 
 // --- DEBOUNCE GENÉRICO ---
