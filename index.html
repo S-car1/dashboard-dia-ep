@@ -130,7 +130,7 @@
 
     /* BARRA DE NAVEGACIÓN Y MENÚS */
     .tabs-nav { position: relative; background: var(--surface); padding: 0 2rem; display: flex; justify-content: center; gap: 3rem; border-top: 1px solid var(--border); border-bottom: none; }
-    .tab-btn { background: transparent; border: none; color: var(--text-muted); font-family: var(--font); font-size: 0.85rem; font-weight: 700; padding: 1rem 0; cursor: pointer; position: relative; text-transform: uppercase; letter-spacing: 0.05em; transition: 0.2s; }
+    .tab-btn { background: transparent; border: none; color: var(--text-muted); font-family: var(--font); font-size: 0.85rem; font-weight: 700; padding: 0.85rem 0; cursor: pointer; position: relative; text-transform: uppercase; letter-spacing: 0.05em; transition: 0.2s; }
     .tab-btn.active { color: var(--brand); }
     .tab-btn.active::after { content: ''; position: absolute; bottom: -1px; left: 0; right: 0; height: 3px; border-radius: 3px 3px 0 0; background: var(--brand); }
 
@@ -209,6 +209,8 @@
     .btn-reset-series:hover { color: var(--brand); border-color: var(--brand); }
 
     @media (max-width: 1024px) { .kpi-grid { grid-template-columns: 1fr; } }
+    /* Celular: con filtros apilados, la barra fija ocupaba ~la mitad de la pantalla (mismo criterio que dashboard-dia). */
+    @media (max-width: 640px) { .sticky-top-section { position: static; } }
   </style>
 </head>
 <body>
@@ -414,6 +416,10 @@ function handleLogin() {
 function startDashboard() {
   document.getElementById('login-overlay').style.display = 'none';
   document.getElementById('navbar').style.display = 'block';
+  // Header (franja de colores + logo/título) se va con el scroll; filtros y pestañas quedan fijos.
+  // top negativo = alto del header; se recalcula si cambia (resize, chips de filtros activos).
+  const navbarEl = document.getElementById('navbar'), headerEl = navbarEl.querySelector('.header');
+  new ResizeObserver(() => { navbarEl.style.top = -(Math.ceil(headerEl.getBoundingClientRect().height) + 3) + 'px'; }).observe(headerEl);
   document.getElementById('dashboard').style.display = 'block';
 
   if (!IS_ADMIN && SESSION_RBD) {
