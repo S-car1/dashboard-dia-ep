@@ -250,9 +250,8 @@
   <div class="filter-bar">
     <div class="filter-group" id="group-rbd" style="flex: 1.5;" data-label="UNIDAD EDUCATIVA ▾"><select id="f-rbd" multiple placeholder="Buscar unidad educativa..."></select></div>
     
-    <div id="static-rbd-container" class="filter-group" style="display:none; flex: 1.5;">
+    <div id="static-rbd-container" class="filter-group" style="display:none; flex: 3;">
       <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid var(--leng); border-radius: 8px; padding: 0 12px; height: 34px; display: flex; align-items: center; overflow: hidden;">
-        <span style="font-size: 0.75rem; font-weight: 800; color: var(--text-muted); margin-right: 8px; letter-spacing: 0.05em;">UNIDAD EDUCATIVA:</span>
         <span id="static-rbd-text" style="font-size: 0.85rem; font-weight: 700; color: var(--leng); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></span>
       </div>
     </div>
@@ -424,6 +423,7 @@ function startDashboard() {
       document.getElementById('group-rbd').style.display = 'none';
       document.getElementById('static-rbd-container').style.display = 'block';
       document.getElementById('static-rbd-text').innerText = DATA_RAW.maps[I.RBD][rbdId];
+      document.getElementById('static-rbd-text').title = DATA_RAW.maps[I.RBD][rbdId]; // nombre completo al pasar el mouse si se corta
     }
   }
   update();
