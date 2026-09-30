@@ -123,7 +123,7 @@
     .filter-bar { padding: 0.5rem 2rem 0.8rem 2rem; display: flex; flex-wrap: wrap; gap: 1.2rem; align-items: center; clear: both; }
 
     .filter-group { position: relative; }
-    .filter-group::before { content: attr(data-label); position: absolute; left: 0; top: 8px; font-size: 0.85rem; font-weight: 800; color: var(--text-muted); pointer-events: none; transition: opacity 0.2s, color 0.2s; z-index: 10; letter-spacing: 0.05em; }
+    .filter-group::before { content: attr(data-label); position: absolute; left: 12px; top: 8px; font-size: 0.85rem; font-weight: 800; color: var(--text-muted); pointer-events: none; transition: opacity 0.2s, color 0.2s; z-index: 10; letter-spacing: 0.05em; }
     .filter-group:hover::before { color: var(--text); }
     .filter-group:focus-within::before { opacity: 0; }
     .filter-group:has(.ts-wrapper.has-items)::before { color: var(--brand); }
