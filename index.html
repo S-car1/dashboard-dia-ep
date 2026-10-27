@@ -183,7 +183,7 @@
     .filter-value-tag:hover { text-decoration: line-through; color: var(--red); }
 
     /* KPIs y GRÁFICOS */
-    .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
     .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 1.1rem 1.25rem 1.1rem 1.5rem; position: relative; overflow: hidden; transition: background 0.3s, border-color 0.3s; }
     .kpi::before { content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 4px; background: var(--kpi-c); }
     .kpi-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); margin-bottom: 0.5rem; }
@@ -208,7 +208,16 @@
     .btn-reset-series { background: transparent; border: 1px solid var(--border); color: var(--text-muted); font-family: var(--font); font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; padding: 0.35rem 0.7rem; border-radius: 6px; cursor: pointer; transition: 0.2s; }
     .btn-reset-series:hover { color: var(--brand); border-color: var(--brand); }
 
-    @media (max-width: 1024px) { .kpi-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 1024px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 560px) { .kpi-grid { grid-template-columns: 1fr; } }
+    .tabla-col { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    .tabla-col th { text-align: left; font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--border); cursor: pointer; white-space: nowrap; user-select: none; }
+    .tabla-col th:hover { color: var(--brand); }
+    .tabla-col td { padding: 0.45rem 0.6rem; border-bottom: 1px solid var(--border); }
+    .tabla-col tr.fila-col { cursor: pointer; }
+    .tabla-col tr.fila-col:hover td { background: var(--brand-soft); }
+    .tabla-col .num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+    .tabla-wrap { overflow-x: auto; max-height: 640px; overflow-y: auto; }
     /* Celular: con filtros apilados, la barra fija ocupaba ~la mitad de la pantalla (mismo criterio que dashboard-dia). */
     @media (max-width: 640px) { .sticky-top-section { position: static; } }
   </style>
@@ -297,32 +306,41 @@
       <div class="kpi" style="--kpi-c: var(--text)">
         <div class="kpi-label">Total Estudiantes Evaluados</div>
         <div class="kpi-val" id="kpi-total">—</div>
+        <div class="kpi-compare" id="kpi-total-prev" style="display:none;"></div>
         <div class="kpi-compare" id="kpi-total-slep" style="color: var(--text-muted); display:none;"></div>
       </div>
       <div class="kpi" style="--kpi-c: var(--total)">
         <div class="kpi-label">% Logro Esperado <span class="kpi-sublabel">(Consolidando + Profundizando)</span></div>
         <div class="kpi-val" id="kpi-logro">—</div>
+        <div class="kpi-compare" id="kpi-logro-prev" style="display:none;"></div>
         <div class="kpi-compare" id="kpi-logro-slep" style="display:none;"></div>
       </div>
       <div class="kpi" style="--kpi-c: var(--red)">
-        <div class="kpi-label">% Nivel de Riesgo <span class="kpi-sublabel">(No Evaluado + Comenzando)</span></div>
+        <div class="kpi-label">% Nivel de Riesgo <span class="kpi-sublabel">(Comenzando)</span></div>
         <div class="kpi-val" id="kpi-riesgo">—</div>
+        <div class="kpi-compare" id="kpi-riesgo-prev" style="display:none;"></div>
         <div class="kpi-compare" id="kpi-riesgo-slep" style="display:none;"></div>
       </div>
+      <div class="kpi" style="--kpi-c: var(--text-muted)">
+        <div class="kpi-label">% Sin Registro <span class="kpi-sublabel">(No Evaluado: dato faltante, no es nivel de aprendizaje)</span></div>
+        <div class="kpi-val" id="kpi-sinreg">—</div>
+        <div class="kpi-compare" id="kpi-sinreg-prev" style="display:none;"></div>
+        <div class="kpi-compare" id="kpi-sinreg-slep" style="display:none;"></div>
+      </div>
     </div>
-    
+
     <div class="charts-grid">
       <div class="chart-block full-width">
-        <div class="chart-card">
-          <div class="chart-header"><div class="chart-title">Distribución Global<span>Proporción de categorías en la selección actual</span></div><button class="btn-reset-series" onclick="resetChartSeries('chart-donut')" title="Doble clic en la leyenda también restablece">Restablecer series</button></div>
-          <div class="chart-wrap" id="chart-donut" style="min-height: 400px;"></div>
+        <div class="chart-card" style="min-height: 0;">
+          <div class="chart-header"><div class="chart-title">% Logro por Núcleo<span>(Consolidando + Profundizando), del núcleo más débil al más fuerte</span></div><button class="btn-reset-series" onclick="resetChartSeries('chart-nucleo')" title="Doble clic en la leyenda también restablece">Restablecer series</button></div>
+          <div class="chart-wrap" id="chart-nucleo" style="min-height: 320px;"></div>
         </div>
       </div>
-      
+
       <div class="chart-block full-width">
-        <div class="chart-card">
-          <div class="chart-header"><div class="chart-title">% Logro por Núcleo<span>(Consolidando + Profundizando)</span></div><button class="btn-reset-series" onclick="resetChartSeries('chart-radar')" title="Doble clic en la leyenda también restablece">Restablecer series</button></div>
-          <div class="chart-wrap" id="chart-radar" style="min-height: 600px;"></div>
+        <div class="chart-card" style="min-height: 0;">
+          <div class="chart-header"><div class="chart-title">Distribución por Categoría<span>Proporción de estudiantes en cada categoría de logro</span></div><button class="btn-reset-series" onclick="resetChartSeries('chart-distrib')" title="Doble clic en la leyenda también restablece">Restablecer series</button></div>
+          <div class="chart-wrap" id="chart-distrib" style="min-height: 140px;"></div>
         </div>
       </div>
     </div>
@@ -330,18 +348,26 @@
 
   <div id="tab-detallado" class="tab-content" style="display:none;">
     <div class="charts-grid">
-      
-      <div class="chart-block full-width">
-        <div class="chart-card">
-          <div class="chart-header"><div class="chart-title">Desglose por Rúbrica Evaluada<span>Composición al 100% por Categoría de Logro</span></div><button class="btn-reset-series" onclick="resetChartSeries('chart-stacked')" title="Doble clic en la leyenda también restablece">Restablecer series</button></div>
-          <div class="chart-wrap" style="min-height: 450px;" id="chart-stacked"></div>
+
+      <div class="chart-block full-width" id="card-colegios" style="display:none;">
+        <div class="chart-card" style="min-height: 0;">
+          <div class="chart-header"><div class="chart-title">Establecimientos<span>Ordenados según la columna elegida (clic en el encabezado). Clic en una fila para ver solo ese establecimiento.</span></div></div>
+          <div class="tabla-wrap"><table class="tabla-col" id="tabla-colegios"></table></div>
         </div>
       </div>
-      
+
       <div class="chart-block full-width">
-        <div class="chart-card">
-          <div class="chart-header"><div class="chart-title">Mapa de Calor: Alertas por Curso<span>Muestra el % de estudiantes en "No Evaluado" o "Comenzando" (Rojo = Mayor Riesgo)</span></div><button class="btn-reset-series" onclick="resetChartSeries('chart-heatmap')" title="Doble clic en la leyenda también restablece">Restablecer series</button></div>
-          <div class="chart-wrap" style="min-height: 500px;" id="chart-heatmap"></div>
+        <div class="chart-card" style="min-height: 0;">
+          <div class="chart-header"><div class="chart-title">Mapa de Calor: Riesgo por Núcleo y Curso<span>% de estudiantes en "Comenzando" (Rojo = Mayor Riesgo). El sin registro se ve aparte en las tarjetas.</span></div><button class="btn-reset-series" onclick="resetChartSeries('chart-heatmap')" title="Doble clic en la leyenda también restablece">Restablecer series</button></div>
+          <div class="chart-wrap" style="min-height: 380px;" id="chart-heatmap"></div>
+        </div>
+      </div>
+
+      <div class="chart-block full-width">
+        <div class="chart-card" style="min-height: 0;">
+          <div class="chart-header"><div class="chart-title">Desglose por Rúbrica Evaluada<span id="sub-rubricas">Composición al 100% por categoría de logro</span></div>
+            <div style="display:flex; gap:0.5rem;"><button class="btn-reset-series" id="btn-rubricas" onclick="toggleRubricas()">Ver todas las rúbricas</button><button class="btn-reset-series" onclick="resetChartSeries('chart-stacked')" title="Doble clic en la leyenda también restablece">Restablecer series</button></div></div>
+          <div class="chart-wrap" style="min-height: 300px;" id="chart-stacked"></div>
         </div>
       </div>
 
@@ -548,143 +574,131 @@ function renderActiveFiltersTray() {
 }
 
 // --- MOTOR DE DATOS Y PROCESAMIENTO ---
+const sumArr = a => a.reduce((x, y) => x + y, 0);
+const pct = (num, den) => den > 0 ? num / den * 100 : 0;
+// Con 5 categorías [No Evaluado, Comenzando, Desarrollando, Consolidando, Profundizando]:
+//  logro = Consolidando + Profundizando; riesgo = Comenzando; sin registro = No Evaluado (dato faltante, no es un nivel de aprendizaje)
+const metricas = s => { const t = sumArr(s); return { logro: pct(s[3] + s[4], t), riesgo: pct(s[1], t), sinReg: pct(s[0], t) }; };
+const rowCats = r => [r[I.NO_EV], r[I.COM], r[I.DES], r[I.CON], r[I.PRO]];
+const addTo = (acc, c) => { for (let i = 0; i < 5; i++) acc[i] += c[i]; };
+let lastRubricaData = {};
+let showAllRubricas = false;
+let sortColegios = { key: 'riesgo', dir: -1 };
+
+function pasaFiltros(r, f, o = {}) {
+  const per = o.periodo !== undefined ? [String(o.periodo)] : f.periodo;
+  if (per.length && !per.includes(String(r[I.PERIODO]))) return false;
+  if (f.nivel.length && !f.nivel.includes(String(r[I.NIVEL]))) return false;
+  if (f.curso.length && !f.curso.includes(String(r[I.CURSO]))) return false;
+  if (f.ambito.length && !f.ambito.includes(String(r[I.AMBITO]))) return false;
+  if (f.nucleo.length && !f.nucleo.includes(String(r[I.NUCLEO]))) return false;
+  if (f.oa.length && !f.oa.includes(String(r[I.OA]))) return false;
+  if (!o.sinRbd && f.rbd.length && !f.rbd.includes(String(r[I.RBD]))) return false;
+  return true;
+}
+
+// Agrega las filas que pasan los filtros. o.sinRbd = ignora el filtro de establecimiento (territorio);
+// o.periodo = fuerza otro período (para comparar con el año anterior).
+function agregar(f, o = {}) {
+  const A = { sums: [0, 0, 0, 0, 0], rubrica: {}, nucleo: {}, nucCurso: {}, aulas: {}, total: 0 };
+  DATA_RAW.rows.forEach(r => {
+    if (!pasaFiltros(r, f, o)) return;
+    const c = rowCats(r), tot = sumArr(c);
+    const rub = DATA_RAW.maps[I.RUBRICA][r[I.RUBRICA]];
+    const nuc = DATA_RAW.maps[I.NUCLEO][r[I.NUCLEO]];
+    const cur = `${DATA_RAW.maps[I.NIVEL][r[I.NIVEL]]} ${DATA_RAW.maps[I.CURSO][r[I.CURSO]]}`;
+    addTo(A.sums, c);
+    addTo(A.rubrica[rub] = A.rubrica[rub] || [0, 0, 0, 0, 0], c);
+    addTo(A.nucleo[nuc] = A.nucleo[nuc] || [0, 0, 0, 0, 0], c);
+    A.nucCurso[nuc] = A.nucCurso[nuc] || {};
+    addTo(A.nucCurso[nuc][cur] = A.nucCurso[nuc][cur] || [0, 0, 0, 0, 0], c);
+    // N real: por aula (período-RBD-nivel-curso) el máximo de la suma de categorías entre rúbricas
+    const key = r[I.PERIODO] + '-' + r[I.RBD] + '-' + r[I.NIVEL] + '-' + r[I.CURSO];
+    if (!A.aulas[key] || tot > A.aulas[key]) A.aulas[key] = tot;
+  });
+  A.total = sumArr(Object.values(A.aulas));
+  return A;
+}
+
+// Un resumen por establecimiento (respeta todos los filtros salvo el de establecimiento)
+function agregarPorColegio(f) {
+  const M = {};
+  DATA_RAW.rows.forEach(r => {
+    if (!pasaFiltros(r, f, { sinRbd: true })) return;
+    const c = rowCats(r), tot = sumArr(c), id = r[I.RBD];
+    const o = M[id] = M[id] || { sums: [0, 0, 0, 0, 0], nuc: {}, aulas: {} };
+    addTo(o.sums, c);
+    const nuc = DATA_RAW.maps[I.NUCLEO][r[I.NUCLEO]];
+    addTo(o.nuc[nuc] = o.nuc[nuc] || [0, 0, 0, 0, 0], c);
+    const key = r[I.PERIODO] + '-' + r[I.NIVEL] + '-' + r[I.CURSO];
+    if (!o.aulas[key] || tot > o.aulas[key]) o.aulas[key] = tot;
+  });
+  return M;
+}
+
+// Período del año anterior con la misma ronda (ej. "2026 Inicio" -> "2025 Inicio"); solo si hay un período seleccionado
+function periodoAnterior(f) {
+  if (f.periodo.length !== 1) return null;
+  const m = DATA_RAW.maps[I.PERIODO][f.periodo[0]].match(/^(\d{4})\s+(.+)$/);
+  if (!m) return null;
+  const idx = DATA_RAW.maps[I.PERIODO].indexOf((parseInt(m[1], 10) - 1) + ' ' + m[2]);
+  return idx === -1 ? null : idx;
+}
+
 function update() {
   const f = {}; Object.keys(ts).forEach(k => f[k] = ts[k].getValue());
   renderActiveFiltersTray();
   document.getElementById('nota-periodos').style.display = f.periodo.length === 1 ? 'none' : 'block';
 
-  // Matrices Locales (Filtro completo con RBD)
-  let sums = [0, 0, 0, 0, 0];
-  let dataRubrica = {};
-  let dataNucleo = {};
-  let dataHeatmap = {};
-  let aulasLocal = {}; // NUEVO: Diccionario para capturar el N real local
+  const loc = agregar(f);
+  const slep = agregar(f, { sinRbd: true });
+  let prev = null;
+  const pi = periodoAnterior(f);
+  if (pi !== null) {
+    prev = agregar(f, { periodo: pi });
+    if (prev.total > 0) prev.nombre = DATA_RAW.maps[I.PERIODO][pi]; else prev = null;
+  }
 
-  // Matrices Territoriales (Ignoran RBD, pero respetan Nivel, Curso, OA, etc.)
-  let slepSums = [0, 0, 0, 0, 0];
-  let dataNucleoSlep = {};
-  let dataHeatmapSlep = {};
-  let aulasSlep = {}; // NUEVO: Diccionario para capturar el N real del SLEP
-
-  DATA_RAW.rows.forEach(r => {
-    // 1. Evaluar filtros globales del territorio (Ignora RBD)
-    if (f.periodo.length && !f.periodo.includes(String(r[I.PERIODO]))) return;
-    if (f.nivel.length && !f.nivel.includes(String(r[I.NIVEL]))) return;
-    if (f.curso.length && !f.curso.includes(String(r[I.CURSO]))) return;
-    if (f.ambito.length && !f.ambito.includes(String(r[I.AMBITO]))) return;
-    if (f.nucleo.length && !f.nucleo.includes(String(r[I.NUCLEO]))) return;
-    if (f.oa.length && !f.oa.includes(String(r[I.OA]))) return;
-
-    // Datos descriptivos decodificados
-    const rubV = DATA_RAW.maps[I.RUBRICA][r[I.RUBRICA]];
-    const nucV = DATA_RAW.maps[I.NUCLEO][r[I.NUCLEO]];
-    const curV = `${DATA_RAW.maps[I.NIVEL][r[I.NIVEL]]} ${DATA_RAW.maps[I.CURSO][r[I.CURSO]]}`;
-
-    const nE = r[I.NO_EV], com = r[I.COM], des = r[I.DES], con = r[I.CON], pro = r[I.PRO];
-    const totRow = nE + com + des + con + pro;
-    const logroRow = con + pro;
-    const alertaRow = nE + com;
-
-    // --- NUEVO LÓGICA: Captura de Aulas Únicas (SLEP) ---
-    // Creamos la llave única, ej: "1-9598-NT1-A" (período-RBD-nivel-curso)
-    const aulaKey = r[I.PERIODO] + "-" + r[I.RBD] + "-" + r[I.NIVEL] + "-" + r[I.CURSO];
-    if (!aulasSlep[aulaKey]) aulasSlep[aulaKey] = 0;
-    if (totRow > aulasSlep[aulaKey]) aulasSlep[aulaKey] = totRow; // Guarda el N máximo detectado
-
-    // Acumular matriz territorial SLEP
-    slepSums[0] += nE; slepSums[1] += com; slepSums[2] += des; slepSums[3] += con; slepSums[4] += pro;
-    
-    if (!dataNucleoSlep[nucV]) dataNucleoSlep[nucV] = { logro: 0, total: 0 };
-    dataNucleoSlep[nucV].logro += logroRow;
-    dataNucleoSlep[nucV].total += totRow;
-
-    if (!dataHeatmapSlep[rubV]) dataHeatmapSlep[rubV] = { alerta: 0, total: 0 };
-    dataHeatmapSlep[rubV].alerta += alertaRow;
-    dataHeatmapSlep[rubV].total += totRow;
-
-    // 2. Evaluar filtro específico del Establecimiento (RBD)
-    if (f.rbd.length && !f.rbd.includes(String(r[I.RBD]))) return;
-
-    // --- NUEVA LÓGICA: Captura de Aulas Únicas (Local) ---
-    if (!aulasLocal[aulaKey]) aulasLocal[aulaKey] = 0;
-    if (totRow > aulasLocal[aulaKey]) aulasLocal[aulaKey] = totRow; // Guarda el N máximo detectado
-
-    // Acumular matriz local (Mi Escuela)
-    sums[0] += nE; sums[1] += com; sums[2] += des; sums[3] += con; sums[4] += pro;
-
-    if (!dataRubrica[rubV]) dataRubrica[rubV] = [0,0,0,0,0];
-    dataRubrica[rubV][0] += nE; dataRubrica[rubV][1] += com;
-    dataRubrica[rubV][2] += des; dataRubrica[rubV][3] += con; dataRubrica[rubV][4] += pro;
-
-    if (!dataNucleo[nucV]) dataNucleo[nucV] = { logro: 0, total: 0 };
-    dataNucleo[nucV].logro += logroRow;
-    dataNucleo[nucV].total += totRow;
-
-    if (!dataHeatmap[rubV]) dataHeatmap[rubV] = {};
-    if (!dataHeatmap[rubV][curV]) dataHeatmap[rubV][curV] = { alerta: 0, total: 0 };
-    dataHeatmap[rubV][curV].alerta += alertaRow;
-    dataHeatmap[rubV][curV].total += totRow;
-  });
-
-  // --- NUEVA LÓGICA: Sumamos los máximos de cada aula para tener el N Real ---
-  const trueTotalLocal = Object.values(aulasLocal).reduce((sum, val) => sum + val, 0);
-  const trueTotalSlep = Object.values(aulasSlep).reduce((sum, val) => sum + val, 0);
-
-  // Enviamos los nuevos totales a los KPIs
-  renderKPIs(sums, slepSums, trueTotalLocal, trueTotalSlep);
-  renderDonut(sums, slepSums);
-  renderStacked(dataRubrica);
-  renderRadar(dataNucleo, dataNucleoSlep);
-  renderHeatmap(dataHeatmap, dataHeatmapSlep);
+  renderKPIs(loc, slep, prev);
+  renderNucleo(loc, slep, prev);
+  renderDistrib(loc, slep, prev);
+  lastRubricaData = loc.rubrica;
+  renderStacked();
+  renderHeatmap(loc, slep);
+  renderColegios(f);
 }
 
 // --- DIBUJAR KPIs ---
-function renderKPIs(sums, slepSums, trueTotalLocal, trueTotalSlep) {
-  // Las masas gigantes de evaluaciones para dividir los porcentajes
-  const totalEvals = sums.reduce((a, b) => a + b, 0);
-  const totalEvalsSlep = slepSums.reduce((a, b) => a + b, 0);
-  
-  // 1. Total Estudiantes Evaluados (Usando el N REAL)
-  document.getElementById('kpi-total').innerText = trueTotalLocal.toLocaleString('es-CL');
-  
-  // 2. % Logro Esperado (Usando la masa de evaluaciones)
-  const logro = totalEvals > 0 ? (sums[3] + sums[4]) / totalEvals * 100 : 0;
-  const logroSlep = totalEvalsSlep > 0 ? (slepSums[3] + slepSums[4]) / totalEvalsSlep * 100 : 0;
-  document.getElementById('kpi-logro').innerText = logro.toFixed(1) + '%';
-  
-  // 3. % Nivel de Riesgo (Usando la masa de evaluaciones)
-  const riesgo = totalEvals > 0 ? (sums[0] + sums[1]) / totalEvals * 100 : 0;
-  const riesgoSlep = totalEvalsSlep > 0 ? (slepSums[0] + slepSums[1]) / totalEvalsSlep * 100 : 0;
-  document.getElementById('kpi-riesgo').innerText = riesgo.toFixed(1) + '%';
-
-  // Control de visibilidad comparativa territorial (Toggle)
-  const elements = {
-    total: document.getElementById('kpi-total-slep'),
-    logro: document.getElementById('kpi-logro-slep'),
-    riesgo: document.getElementById('kpi-riesgo-slep')
+function renderKPIs(loc, slep, prev) {
+  const m = metricas(loc.sums), ms = metricas(slep.sums), mp = prev ? metricas(prev.sums) : null;
+  const set = (id, txt, color) => {
+    const el = document.getElementById(id);
+    if (txt === null) { el.style.display = 'none'; return; }
+    el.style.display = 'block'; el.innerText = txt; if (color) el.style.color = color;
   };
+  const delta = (cur, ref, buenoSiSube, ref_txt) => {
+    const d = cur - ref;
+    if (Math.abs(d) < 0.05) return [`= igual que ${ref_txt}`, 'var(--text-muted)'];
+    return [`${d > 0 ? '↑ +' : '↓ '}${d.toFixed(1)} pts vs ${ref_txt}`, (d > 0) === buenoSiSube ? 'var(--total)' : 'var(--red)'];
+  };
+  document.getElementById('kpi-total').innerText = loc.total.toLocaleString('es-CL');
+  document.getElementById('kpi-logro').innerText = m.logro.toFixed(1) + '%';
+  document.getElementById('kpi-riesgo').innerText = m.riesgo.toFixed(1) + '%';
+  document.getElementById('kpi-sinreg').innerText = m.sinReg.toFixed(1) + '%';
+
+  if (prev) {
+    set('kpi-total-prev', `vs ${prev.total.toLocaleString('es-CL')} en ${prev.nombre}`, 'var(--text-muted)');
+    set('kpi-logro-prev', ...delta(m.logro, mp.logro, true, prev.nombre));
+    set('kpi-riesgo-prev', ...delta(m.riesgo, mp.riesgo, false, prev.nombre));
+    set('kpi-sinreg-prev', ...delta(m.sinReg, mp.sinReg, false, prev.nombre));
+  } else ['total', 'logro', 'riesgo', 'sinreg'].forEach(k => set('kpi-' + k + '-prev', null));
 
   if (showSlep) {
-    elements.total.style.display = 'block';
-    // Muestra el N real del SLEP
-    elements.total.innerText = `Territorio: ${trueTotalSlep.toLocaleString('es-CL')} est.`;
-    
-    // Brecha Logro
-    elements.logro.style.display = 'block';
-    const diffLogro = logro - logroSlep;
-    elements.logro.innerText = `${diffLogro >= 0 ? '↑ +' : '↓ '}${diffLogro.toFixed(1)}% respecto al SLEP`;
-    elements.logro.style.color = diffLogro >= 0 ? 'var(--total)' : 'var(--red)';
-
-    // Brecha Riesgo (Invertido: Menos riesgo es mejor)
-    elements.riesgo.style.display = 'block';
-    const diffRiesgo = riesgo - riesgoSlep;
-    elements.riesgo.innerText = `${diffRiesgo <= 0 ? '↓ ' : '↑ +'}${diffRiesgo.toFixed(1)}% respecto al SLEP`;
-    elements.riesgo.style.color = diffRiesgo <= 0 ? 'var(--total)' : 'var(--red)';
-  } else {
-    elements.total.style.display = 'none';
-    elements.logro.style.display = 'none';
-    elements.riesgo.style.display = 'none';
-  }
+    set('kpi-total-slep', `Territorio: ${slep.total.toLocaleString('es-CL')} est.`, 'var(--text-muted)');
+    set('kpi-logro-slep', ...delta(m.logro, ms.logro, true, 'el SLEP'));
+    set('kpi-riesgo-slep', ...delta(m.riesgo, ms.riesgo, false, 'el SLEP'));
+    set('kpi-sinreg-slep', ...delta(m.sinReg, ms.sinReg, false, 'el SLEP'));
+  } else ['total', 'logro', 'riesgo', 'sinreg'].forEach(k => set('kpi-' + k + '-slep', null));
 }
 
 function safeChartRender(id, options) {
@@ -721,214 +735,174 @@ function debounce(fn, wait) {
 const debouncedUpdate = debounce(update, 150);
 
 // --- DIBUJAR GRÁFICOS ---
-function renderDonut(sums, slepSums) {
-    const tColors = getThemeColors();
-    
-    // Calculamos el total de estudiantes del SLEP para poder sacar sus porcentajes
-    const totalSlep = slepSums ? slepSums.reduce((a, b) => a + b, 0) : 0;
+const tooltipTheme = () => document.body.classList.contains('dark-theme') ? 'dark' : 'light';
+const cssVar = n => getComputedStyle(document.body).getPropertyValue(n).trim();
 
+// Una sola barra apilada por grupo (selección / año anterior / SLEP) en vez del donut
+function renderDistrib(loc, slep, prev) {
+    const tColors = getThemeColors();
+    const grupos = [{ nombre: 'Esta selección', s: loc.sums }];
+    if (prev) grupos.push({ nombre: prev.nombre, s: prev.sums });
+    if (showSlep) grupos.push({ nombre: 'Promedio SLEP', s: slep.sums });
+    if (sumArr(loc.sums) === 0) {
+        document.getElementById('chart-distrib').innerHTML = `<div class="empty-state-container" style="padding:2rem; text-align:center;">Filtros sin resultados</div>`;
+        return;
+    }
+    const series = CATEGORIAS.map((cat, i) => ({ name: cat, data: grupos.map(g => parseFloat(pct(g.s[i], sumArr(g.s)).toFixed(1))) }));
     const options = {
-        series: sums,
-        chart: { type: 'donut', height: 400, foreColor: tColors.text, background: 'transparent' },
-        labels: CATEGORIAS,
+        series: series,
+        chart: { type: 'bar', height: 90 + grupos.length * 48, stacked: true, foreColor: tColors.text, background: 'transparent', toolbar: { show: false } },
+        plotOptions: { bar: { horizontal: true, barHeight: '62%', borderRadius: 2 } },
         colors: tColors.palette,
-        dataLabels: { 
-            enabled: true, 
-            formatter: val => val.toFixed(1) + "%", 
-            style: { fontSize: '14px', fontFamily: 'var(--font)', fontWeight: 800 }, 
-            dropShadow: { enabled: false } 
-        },
-        legend: { 
-            position: 'right', 
-            fontSize: '14px', 
-            fontFamily: 'var(--font)', 
-            itemMargin: { vertical: 5 },
-            // AQUÍ OCURRE LA MAGIA DEL TEXTO COMPARATIVO
-            formatter: function(seriesName, opts) {
-                // Cálculo de mi establecimiento
-                const total = opts.w.globals.seriesTotals.reduce((a, b) => a + b, 0);
-                const val = opts.w.globals.seriesTotals[opts.seriesIndex];
-                const percent = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
-                
-                // Si el Toggle SLEP está encendido, agregamos el texto extra
-                if (showSlep && slepSums && totalSlep > 0) {
-                    const valSlep = slepSums[opts.seriesIndex];
-                    const percentSlep = ((valSlep / totalSlep) * 100).toFixed(1);
-                    return `${seriesName} (${percent}%)  |  SLEP: ${percentSlep}%`;
-                }
-                
-                // Si está apagado, mostramos el formato normal
-                return `${seriesName} (${percent}%)`;
-            }
-        },
-        stroke: { show: false },
-        tooltip: { theme: document.body.classList.contains('dark-theme') ? 'dark' : 'light' },
-        responsive: [{ breakpoint: 768, options: { legend: { position: 'bottom' } } }]
+        dataLabels: { enabled: true, formatter: v => v >= 4 ? v.toFixed(1) + '%' : '', style: { fontSize: '12px', fontWeight: 700 } },
+        stroke: { width: 1, colors: [tColors.surface] },
+        xaxis: { categories: grupos.map(g => g.nombre), max: 100, labels: { formatter: v => Math.round(v) + '%' } },
+        yaxis: { labels: { maxWidth: 160, style: { fontSize: '12px' } } },
+        grid: { borderColor: tColors.grid },
+        legend: { position: 'top', horizontalAlign: 'left' },
+        tooltip: { theme: tooltipTheme(), y: { formatter: v => v.toFixed(1) + '%' } }
     };
-    safeChartRender('chart-donut', options);
+    safeChartRender('chart-distrib', options);
 }
 
-function renderStacked(dataRubrica) {
+function toggleRubricas() {
+    showAllRubricas = !showAllRubricas;
+    renderStacked();
+}
+
+// Rúbricas ordenadas de más a menos riesgo (% Comenzando); por defecto solo las 5 más débiles
+function renderStacked() {
     const tColors = getThemeColors();
-    
-    // ORDEN NATURAL ESTRICTO EN BARRAS APILADAS
-    const rubricas = Object.keys(dataRubrica).sort((a, b) => {
-        const numA = parseInt(a.match(/\d+/) ? a.match(/\d+/)[0] : 0);
-        const numB = parseInt(b.match(/\d+/) ? b.match(/\d+/)[0] : 0);
-        if (numA !== numB) return numA - numB;
-        return a.localeCompare(b);
+    const dataRubrica = lastRubricaData;
+    let rubricas = Object.keys(dataRubrica).sort((a, b) => {
+        const d = pct(dataRubrica[b][1], sumArr(dataRubrica[b])) - pct(dataRubrica[a][1], sumArr(dataRubrica[a]));
+        return d !== 0 ? d : a.localeCompare(b);
     });
-    
-    if(rubricas.length === 0) {
+    const total = rubricas.length;
+    document.getElementById('btn-rubricas').style.display = total > 5 ? '' : 'none';
+    document.getElementById('btn-rubricas').innerText = showAllRubricas ? 'Ver solo las 5 más débiles' : `Ver las ${total} rúbricas`;
+    document.getElementById('sub-rubricas').innerText = (showAllRubricas || total <= 5)
+        ? 'Composición al 100% por categoría, de más a menos estudiantes en "Comenzando"'
+        : 'Las 5 rúbricas con más estudiantes en "Comenzando" (composición al 100% por categoría)';
+    if (!showAllRubricas) rubricas = rubricas.slice(0, 5);
+
+    if (rubricas.length === 0) {
         document.getElementById('chart-stacked').innerHTML = `<div class="empty-state-container" style="padding:4rem; text-align:center;">Filtros sin resultados</div>`;
         return;
     }
-
-    const series = CATEGORIAS.map((cat, i) => ({
-        name: cat,
-        data: rubricas.map(r => dataRubrica[r][i])
-    }));
-
+    const series = CATEGORIAS.map((cat, i) => ({ name: cat, data: rubricas.map(r => dataRubrica[r][i]) }));
     const options = {
         series: series,
-        chart: { type: 'bar', height: Math.max(450, rubricas.length * 35), stacked: true, stackType: '100%', foreColor: tColors.text, background: 'transparent', toolbar: {show: false} },
+        chart: { type: 'bar', height: Math.max(260, rubricas.length * 38 + 90), stacked: true, stackType: '100%', foreColor: tColors.text, background: 'transparent', toolbar: { show: false } },
         plotOptions: { bar: { horizontal: true, borderRadius: 2 } },
         colors: tColors.palette,
         xaxis: { categories: rubricas, labels: { formatter: (val) => { return val + "%" } } },
         yaxis: { labels: { maxWidth: 300, style: { fontSize: '12px' } } },
         grid: { borderColor: tColors.grid },
-        tooltip: { y: { formatter: val => val + " estudiantes" }, theme: document.body.classList.contains('dark-theme') ? 'dark' : 'light' },
+        tooltip: { y: { formatter: val => val + " estudiantes" }, theme: tooltipTheme() },
         legend: { position: 'top', horizontalAlign: 'left' }
     };
     safeChartRender('chart-stacked', options);
 }
 
-function renderRadar(dataNucleo, dataNucleoSlep) {
+// % de logro por núcleo en barras horizontales (reemplaza al radar), con año anterior y SLEP opcionales
+function renderNucleo(loc, slep, prev) {
     const tColors = getThemeColors();
-    const nucleos = Object.keys(dataNucleo).sort();
-    
-    const porcentajesLocales = nucleos.map(n => {
-        const tot = dataNucleo[n].total;
-        return tot > 0 ? parseFloat(((dataNucleo[n].logro / tot) * 100).toFixed(1)) : 0;
-    });
-
-    // Inyección de la serie territorial
-    let datasets = [{ name: '% Unidad Educativa', data: porcentajesLocales }];
-    let radarColors = ['var(--leng)'];
-    let markerColors = [tColors.surface];
-
-    if (showSlep) {
-        const porcentajesSlep = nucleos.map(n => {
-            const cell = dataNucleoSlep[n];
-            return cell && cell.total > 0 ? parseFloat(((cell.logro / cell.total) * 100).toFixed(1)) : 0;
-        });
-        datasets.push({ name: '% Promedio SLEP', data: porcentajesSlep });
-        radarColors.push('var(--purple)'); // Línea territorial morada
-        markerColors.push('transparent');
+    const logroDe = (A, n) => A && A.nucleo[n] ? pct(A.nucleo[n][3] + A.nucleo[n][4], sumArr(A.nucleo[n])) : 0;
+    const nucleos = Object.keys(loc.nucleo).sort((a, b) => logroDe(loc, a) - logroDe(loc, b) || a.localeCompare(b));
+    if (nucleos.length === 0) {
+        document.getElementById('chart-nucleo').innerHTML = `<div class="empty-state-container" style="padding:3rem; text-align:center;">Filtros sin resultados</div>`;
+        return;
     }
-
-    const maxVal = Math.max(...porcentajesLocales, showSlep ? Math.max(...datasets[1].data, 10) : 10);
-    const suggestedMax = Math.ceil(maxVal / 10) * 10 + 5;
-
+    const series = [{ name: 'Esta selección', data: nucleos.map(n => parseFloat(logroDe(loc, n).toFixed(1))) }];
+    const colores = [cssVar('--leng')];
+    if (prev) { series.push({ name: prev.nombre, data: nucleos.map(n => parseFloat(logroDe(prev, n).toFixed(1))) }); colores.push(cssVar('--text-muted')); }
+    if (showSlep) { series.push({ name: 'Promedio SLEP', data: nucleos.map(n => parseFloat(logroDe(slep, n).toFixed(1))) }); colores.push(cssVar('--purple')); }
     const options = {
-        series: datasets,
-        chart: { type: 'radar', height: 600, foreColor: tColors.text, background: 'transparent', toolbar: {show: false} },
-        labels: nucleos,
-        stroke: { width: 3, colors: radarColors, dashArray: [0, showSlep ? 4 : 0] }, // Línea punteada para el SLEP
-        fill: { opacity: [0.2, 0.05] },
-        colors: radarColors,
-        markers: { size: 5, colors: markerColors, strokeColors: radarColors, strokeWidth: 2 },
-        yaxis: { 
-            show: true, 
-            min: 0, 
-            max: suggestedMax, 
-            tickAmount: 5,
-            labels: { formatter: val => val.toFixed(0) + '%', style: { colors: tColors.text, fontSize: '11px' } }
-        },
-        dataLabels: { enabled: false },
-        plotOptions: { radar: { polygons: { strokeColors: tColors.grid, strokeWidth: 1, connectorColors: tColors.grid } } },
-        tooltip: { theme: document.body.classList.contains('dark-theme') ? 'dark' : 'light', y: { formatter: val => val.toFixed(1) + '%' } }
+        series: series,
+        chart: { type: 'bar', height: Math.max(300, nucleos.length * (24 + series.length * 16) + 90), foreColor: tColors.text, background: 'transparent', toolbar: { show: false } },
+        plotOptions: { bar: { horizontal: true, borderRadius: 3, barHeight: '78%', dataLabels: { position: 'center' } } },
+        colors: colores,
+        dataLabels: { enabled: true, formatter: v => v.toFixed(1) + '%', style: { fontSize: '11px', fontWeight: 700 } },
+        xaxis: { categories: nucleos, min: 0, labels: { formatter: v => Math.round(v) + '%' } },
+        yaxis: { labels: { maxWidth: 260, style: { fontSize: '12px' } } },
+        grid: { borderColor: tColors.grid },
+        legend: { position: 'top', horizontalAlign: 'left' },
+        tooltip: { theme: tooltipTheme(), y: { formatter: v => v.toFixed(1) + '%' } }
     };
-    safeChartRender('chart-radar', options);
+    safeChartRender('chart-nucleo', options);
 }
 
-function renderHeatmap(dataHeatmap, dataHeatmapSlep) {
+// Mapa de calor núcleo × curso con el % de estudiantes en "Comenzando"
+function renderHeatmap(loc, slep) {
     const tColors = getThemeColors();
     const isDark = document.body.classList.contains('dark-theme');
-    
-    let cursosSet = new Set();
-    Object.keys(dataHeatmap).forEach(rub => {
-        Object.keys(dataHeatmap[rub]).forEach(c => cursosSet.add(c));
-    });
-    let cursos = Array.from(cursosSet).sort();
-
-    // ORDEN NATURAL ESTRICTO EN EL HEATMAP
-    const rubricasOrdenadas = Object.keys(dataHeatmap).sort((a, b) => {
-        const numA = parseInt(a.match(/\d+/) ? a.match(/\d+/)[0] : 0);
-        const numB = parseInt(b.match(/\d+/) ? b.match(/\d+/)[0] : 0);
-        if (numA !== numB) return numA - numB;
-        return a.localeCompare(b);
-    }).reverse(); 
-
-    if(rubricasOrdenadas.length === 0 || (cursos.length === 0 && !showSlep)) {
+    const cursosSet = new Set();
+    Object.values(loc.nucCurso).forEach(m => Object.keys(m).forEach(c => cursosSet.add(c)));
+    const cursos = Array.from(cursosSet).sort();
+    const nucleos = Object.keys(loc.nucCurso).sort().reverse();
+    if (nucleos.length === 0 || cursos.length === 0) {
         document.getElementById('chart-heatmap').innerHTML = `<div class="empty-state-container" style="padding:4rem; text-align:center;">Filtros sin resultados</div>`;
         return;
     }
-
-    // Inyección de la columna Promedio SLEP al final de los ejes
-    if (showSlep && rubricasOrdenadas.length > 0) {
-        cursos.push("PROMEDIO SLEP 🌎");
-    }
-
-    const series = rubricasOrdenadas.map(rubrica => {
-        const data = cursos.map(curso => {
-            if (curso === "PROMEDIO SLEP 🌎") {
-                const cellSlep = dataHeatmapSlep[rubrica];
-                const valSlep = cellSlep && cellSlep.total > 0 ? ((cellSlep.alerta / cellSlep.total) * 100).toFixed(0) : 0;
-                return { x: curso, y: parseInt(valSlep) };
-            } else {
-                const cell = dataHeatmap[rubrica][curso];
-                const val = cell && cell.total > 0 ? ((cell.alerta / cell.total) * 100).toFixed(0) : 0;
-                return { x: curso, y: parseInt(val) };
-            }
-        });
-        return { name: rubrica, data: data };
-    });
-
+    const cols = showSlep ? cursos.concat(['PROMEDIO SLEP']) : cursos;
+    const val = (cell) => cell && sumArr(cell) > 0 ? Math.round(pct(cell[1], sumArr(cell))) : null;
+    const series = nucleos.map(n => ({
+        name: n,
+        data: cols.map(c => ({ x: c, y: c === 'PROMEDIO SLEP' ? val(slep.nucleo[n]) : val(loc.nucCurso[n][c]) }))
+    }));
     const options = {
         series: series,
-        chart: { type: 'heatmap', height: Math.max(500, rubricasOrdenadas.length * 35), foreColor: tColors.text, background: 'transparent', toolbar: {show: false} },
+        chart: { type: 'heatmap', height: Math.max(380, nucleos.length * 52 + 110), foreColor: tColors.text, background: 'transparent', toolbar: { show: false } },
         plotOptions: {
             heatmap: {
-                shadeIntensity: 0.5,
-                useFillColorAsStroke: false,
-                colorScale: {
-                    ranges: [
-                        { from: 0, to: 20, color: isDark ? '#20253f' : '#f0f1f6', name: 'Baja Alerta (<20%)' },
-                        { from: 21, to: 50, color: '#fca5a5', name: 'Alerta Media (21-50%)' },
-                        { from: 51, to: 100, color: '#dc2626', name: 'Alerta Crítica (>50%)' }
-                    ]
-                }
+                shadeIntensity: 0.5, useFillColorAsStroke: false,
+                colorScale: { ranges: [
+                    { from: 0, to: 20, color: isDark ? '#20253f' : '#f0f1f6', name: 'Riesgo bajo (<20%)' },
+                    { from: 21, to: 40, color: '#fca5a5', name: 'Riesgo medio (21-40%)' },
+                    { from: 41, to: 100, color: '#dc2626', name: 'Riesgo alto (>40%)' }
+                ] }
             }
         },
-        dataLabels: { 
-            enabled: true, 
-            formatter: val => val + "%",
-            style: { colors: [isDark ? '#fff' : '#000'], fontSize: '11px' } 
-        },
+        dataLabels: { enabled: true, formatter: v => v === null || v === undefined ? '' : v + "%", style: { colors: [isDark ? '#fff' : '#000'], fontSize: '12px' } },
         stroke: { width: 1, colors: [tColors.grid] },
-        xaxis: { 
-            type: 'category', 
-            position: 'top', 
-            labels: { trim: false, style: { fontWeight: 800 } },
-            axisBorder: { show: false },
-            axisTicks: { show: false }
-        },
-        yaxis: { labels: { maxWidth: 300, style: { fontSize: '11px' } } },
-        tooltip: { theme: isDark ? 'dark' : 'light', y: { formatter: val => val + "%" } }
+        xaxis: { type: 'category', position: 'top', labels: { trim: false, style: { fontWeight: 800 } }, axisBorder: { show: false }, axisTicks: { show: false } },
+        yaxis: { labels: { maxWidth: 300, style: { fontSize: '12px' } } },
+        tooltip: { theme: tooltipTheme(), y: { formatter: v => v + "%" } }
     };
     safeChartRender('chart-heatmap', options);
 }
+
+// Tabla de establecimientos (solo administrador y sin un establecimiento filtrado)
+function renderColegios(f) {
+    const card = document.getElementById('card-colegios');
+    if (!IS_ADMIN || f.rbd.length > 0) { card.style.display = 'none'; return; }
+    const M = agregarPorColegio(f);
+    const filas = Object.keys(M).map(id => {
+        const o = M[id], m = metricas(o.sums);
+        let debil = null, debilV = 101;
+        Object.keys(o.nuc).forEach(n => { const v = pct(o.nuc[n][3] + o.nuc[n][4], sumArr(o.nuc[n])); if (v < debilV) { debilV = v; debil = n; } });
+        return { id: parseInt(id, 10), nombre: DATA_RAW.maps[I.RBD][id], n: sumArr(Object.values(o.aulas)), logro: m.logro, riesgo: m.riesgo, sinReg: m.sinReg, debil: debil ? `${debil} (${debilV.toFixed(0)}%)` : '' };
+    });
+    if (filas.length === 0) { card.style.display = 'none'; return; }
+    const { key, dir } = sortColegios;
+    filas.sort((a, b) => (typeof a[key] === 'string' ? a[key].localeCompare(b[key]) : a[key] - b[key]) * dir);
+    const sombra = (v, max, color) => `background: color-mix(in srgb, ${color} ${Math.min(55, v / max * 55).toFixed(0)}%, transparent);`;
+    const cab = [['nombre', 'Establecimiento'], ['n', 'Estudiantes'], ['logro', '% Logro'], ['riesgo', '% Riesgo'], ['sinReg', '% Sin registro'], ['debil', 'Núcleo más débil (% logro)']];
+    const flecha = k => k === key ? (dir === 1 ? ' ▲' : ' ▼') : '';
+    document.getElementById('tabla-colegios').innerHTML =
+        '<thead><tr>' + cab.map(([k, t]) => `<th onclick="ordenarColegios('${k}')">${t}${flecha(k)}</th>`).join('') + '</tr></thead><tbody>' +
+        filas.map(r => `<tr class="fila-col" onclick="verColegio(${r.id})"><td>${r.nombre}</td><td class="num">${r.n.toLocaleString('es-CL')}</td>` +
+            `<td class="num" style="${sombra(r.logro, 40, 'var(--total)')}">${r.logro.toFixed(1)}%</td>` +
+            `<td class="num" style="${sombra(r.riesgo, 60, 'var(--red)')}">${r.riesgo.toFixed(1)}%</td>` +
+            `<td class="num" style="${sombra(r.sinReg, 60, 'var(--text-muted)')}">${r.sinReg.toFixed(1)}%</td><td>${r.debil}</td></tr>`).join('') + '</tbody>';
+    card.style.display = 'block';
+}
+function ordenarColegios(k) {
+    sortColegios = { key: k, dir: sortColegios.key === k ? -sortColegios.dir : (k === 'nombre' || k === 'debil' ? 1 : -1) };
+    update();
+}
+function verColegio(id) { ts.rbd.setValue([String(id)]); }
 
 function abrirAyuda() { document.getElementById('help-overlay').classList.add('open'); }
 function cerrarAyuda() { document.getElementById('help-overlay').classList.remove('open'); }
@@ -951,8 +925,8 @@ initData();
     <div class="help-section">
       <h3>Pestañas</h3>
       <ul>
-        <li><b>Visión General:</b> distribución global, logro por núcleo y desglose por rúbrica.</li>
-        <li><b>Análisis Detallado:</b> mapa de calor de alertas por curso; sirve para detectar rápido qué cursos concentran más estudiantes en riesgo.</li>
+        <li><b>Visión General:</b> tarjetas con % de logro, riesgo y sin registro (con el cambio respecto al mismo período del año anterior cuando existe), logro por núcleo y distribución por categoría.</li>
+        <li><b>Análisis Detallado:</b> ranking de establecimientos (solo administrador), mapa de calor núcleo × curso y las rúbricas más débiles.</li>
       </ul>
     </div>
     <div class="help-section">
@@ -960,7 +934,8 @@ initData();
       <ul>
         <li>Pasar el mouse sobre una porción, barra o celda muestra el valor exacto.</li>
         <li>Clic en un ítem de la leyenda oculta esa serie; el botón "Restablecer series" (o doble clic sobre la leyenda) reactiva todas.</li>
-        <li>En el Mapa de Calor, rojo = mayor riesgo (más estudiantes en "No Evaluado" o "Comenzando").</li>
+        <li>Riesgo = estudiantes en "Comenzando". "Sin registro" = "No Evaluado": falta el dato, no indica un nivel de aprendizaje. En el Mapa de Calor, rojo = mayor riesgo.</li>
+        <li>La comparación con el año anterior es entre generaciones distintas (no sigue a los mismos niños).</li>
         <li>"PROMEDIO SLEP" agrega una comparación contra el SLEP completo al filtrar por un establecimiento.</li>
       </ul>
     </div>
