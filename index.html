@@ -120,7 +120,7 @@
     .logo-dark { display: none; }
     body.dark-theme .logo-dark { display: block; }
     body.dark-theme .logo-light { display: none; }
-    .filter-bar { padding: 0.5rem 2rem 0.8rem 2rem; display: flex; flex-wrap: wrap; gap: 1.2rem; align-items: center; clear: both; }
+    .filter-bar { padding: 0.5rem 2rem 0.8rem 2rem; display: flex; flex-wrap: wrap; gap: 0.8rem; align-items: center; clear: both; }
 
     .filter-group { position: relative; }
     .filter-group::before { content: attr(data-label); position: absolute; left: 12px; top: 8px; font-size: 0.85rem; font-weight: 800; color: var(--text-muted); pointer-events: none; transition: opacity 0.2s, color 0.2s; z-index: 10; letter-spacing: 0.05em; }
@@ -171,7 +171,7 @@
     .ts-wrapper.multi .ts-control > div.item { display: none !important; }
     .ts-control input { color: var(--text) !important; font-size: 0.85rem; }
     .ts-wrapper.multi:not(.focus) .ts-control input::placeholder { color: transparent !important; }
-    .ts-dropdown { background: var(--surface) !important; border: 1px solid var(--border) !important; border-radius: 8px !important; box-shadow: 0 10px 30px rgba(20,25,60,0.12); color: var(--text) !important; z-index: 2000; }
+    .ts-dropdown { min-width: 230px; background: var(--surface) !important; border: 1px solid var(--border) !important; border-radius: 8px !important; box-shadow: 0 10px 30px rgba(20,25,60,0.12); color: var(--text) !important; z-index: 2000; }
     .ts-dropdown .active { background: var(--brand-soft) !important; color: var(--text) !important; }
     .btn-clear-text { background: transparent; border: none; color: var(--brand); font-family: var(--font); font-size: 0.8rem; font-weight: 800; cursor: pointer; margin-left: auto; text-transform: uppercase; }
 
@@ -250,23 +250,24 @@
   </header>
 
   <div class="filter-bar">
-    <div class="filter-group" id="group-rbd" style="flex: 1.5;" data-label="UNIDAD EDUCATIVA ▾"><select id="f-rbd" multiple placeholder="Buscar unidad educativa..."></select></div>
-    
-    <div id="static-rbd-container" class="filter-group" style="display:none; flex: 3;">
+    <div class="filter-group" style="flex: 0.8 1 0; min-width: 104px;" data-label="PERIODO ▾"><select id="f-periodo" multiple placeholder="Periodo..."></select></div>
+    <div class="filter-group" style="flex: 0.55 1 0; min-width: 84px;" data-label="NIVEL ▾"><select id="f-nivel" multiple placeholder="Nivel..."></select></div>
+    <div class="filter-group" style="flex: 0.55 1 0; min-width: 84px;" data-label="CURSO ▾"><select id="f-curso" multiple placeholder="Curso..."></select></div>
+    <div class="filter-group" style="flex: 0.9 1 0; min-width: 112px;" data-label="ÁMBITO ▾"><select id="f-ambito" multiple placeholder="Ámbito..."></select></div>
+    <div class="filter-group" style="flex: 0.9 1 0; min-width: 118px;" data-label="NÚCLEO ▾"><select id="f-nucleo" multiple placeholder="Núcleo..."></select></div>
+    <div class="filter-group" style="flex: 0.55 1 0; min-width: 84px;" data-label="O.A. ▾"><select id="f-oa" multiple placeholder="Objetivo..."></select></div>
+    <div class="filter-group" id="group-rbd" style="flex: 3 1 0; min-width: 220px;" data-label="UNIDAD EDUCATIVA ▾"><select id="f-rbd" multiple placeholder="Buscar unidad educativa..."></select></div>
+
+    <div id="static-rbd-container" class="filter-group" style="display:none; flex: 5 1 0; min-width: 220px;">
       <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid var(--leng); border-radius: 8px; padding: 0 12px; height: 34px; display: flex; align-items: center; overflow: hidden;">
         <span id="static-rbd-text" style="font-size: 0.85rem; font-weight: 700; color: var(--leng); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></span>
       </div>
     </div>
-
-    <div class="filter-group" style="flex: 0.9;" data-label="PERIODO ▾"><select id="f-periodo" multiple placeholder="Periodo..."></select></div>
-    <div class="filter-group" style="flex: 0.8;" data-label="NIVEL ▾"><select id="f-nivel" multiple placeholder="Nivel..."></select></div>
-    <div class="filter-group" style="flex: 0.8;" data-label="CURSO ▾"><select id="f-curso" multiple placeholder="Curso..."></select></div>
-    <div class="filter-group" style="flex: 1.2;" data-label="ÁMBITO ▾"><select id="f-ambito" multiple placeholder="Ámbito..."></select></div>
-    <div class="filter-group" style="flex: 1.2;" data-label="NÚCLEO ▾"><select id="f-nucleo" multiple placeholder="Núcleo..."></select></div>
-    <div class="filter-group" style="flex: 0.8;" data-label="O.A. ▾"><select id="f-oa" multiple placeholder="Objetivo..."></select></div>
     
     <button class="btn-clear-text" id="btn-clear">Limpiar Filtros</button>
   </div>
+
+  <div id="nota-periodos" style="display:none; padding: 0 2rem 0.5rem; font-size: 0.68rem; color: var(--text-muted); opacity: 0.65;">Hay más de un período seleccionado: los resultados se suman. Para ver una sola ronda, deja un solo período en el filtro.</div>
 
   <nav class="tabs-nav">
     <div class="theme-toggle-wrapper">
@@ -491,7 +492,7 @@ function setDefaultPeriodo(rbdId) {
 
 // --- FILTROS (TOM SELECT) CON ORDEN NATURAL ---
 function setupFiltersStable() {
-  const selectConfig = ['rbd', 'periodo', 'nivel', 'curso', 'ambito', 'nucleo', 'oa'];
+  const selectConfig = ['periodo', 'nivel', 'curso', 'ambito', 'nucleo', 'oa', 'rbd'];
   
   selectConfig.forEach(k => {
     let sortRules = [ {field: 'num_index', direction: 'asc'}, {field: 'text', direction: 'asc'} ];
@@ -550,6 +551,7 @@ function renderActiveFiltersTray() {
 function update() {
   const f = {}; Object.keys(ts).forEach(k => f[k] = ts[k].getValue());
   renderActiveFiltersTray();
+  document.getElementById('nota-periodos').style.display = f.periodo.length === 1 ? 'none' : 'block';
 
   // Matrices Locales (Filtro completo con RBD)
   let sums = [0, 0, 0, 0, 0];
