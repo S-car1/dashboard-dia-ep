@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Visor de datos DIA Parvularia · SLEP Del Pino</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%234f46e5%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%234338ca%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%227%22%20fill%3D%22url%28%23g%29%22%2F%3E%3Cg%20transform%3D%22translate%285%205%29%20scale%28.917%29%22%20fill%3D%22none%22%20stroke%3D%22%23fff%22%20stroke-width%3D%222.1%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Crect%20x%3D%223%22%20y%3D%2214%22%20width%3D%228%22%20height%3D%227%22%20rx%3D%221.5%22%2F%3E%3Crect%20x%3D%2213%22%20y%3D%2214%22%20width%3D%228%22%20height%3D%227%22%20rx%3D%221.5%22%2F%3E%3Crect%20x%3D%228%22%20y%3D%226%22%20width%3D%228%22%20height%3D%227%22%20rx%3D%221.5%22%20transform%3D%22rotate%28-8%2012%209.5%29%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"><text y='.9em' font-size='90'>🧸</text></svg>">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%234f46e5%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%234338ca%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%227%22%20fill%3D%22url%28%23g%29%22%2F%3E%3Cg%20transform%3D%22translate%285%205%29%20scale%28.917%29%22%20fill%3D%22none%22%20stroke%3D%22%23fff%22%20stroke-width%3D%222.1%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Crect%20x%3D%223%22%20y%3D%2214%22%20width%3D%228%22%20height%3D%227%22%20rx%3D%221.5%22%2F%3E%3Crect%20x%3D%2213%22%20y%3D%2214%22%20width%3D%228%22%20height%3D%227%22%20rx%3D%221.5%22%2F%3E%3Crect%20x%3D%228%22%20y%3D%226%22%20width%3D%228%22%20height%3D%227%22%20rx%3D%221.5%22%20transform%3D%22rotate%28-8%2012%209.5%29%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
   
   <!-- Tipografía oficial del Kit Digital SLEP (gobCL), servida desde /fonts -->
   <link rel="preload" href="fonts/gobCL_Regular.otf" as="font" type="font/otf" crossorigin />
@@ -258,6 +258,7 @@
       </div>
     </div>
 
+    <div class="filter-group" style="flex: 0.9;" data-label="PERIODO ▾"><select id="f-periodo" multiple placeholder="Periodo..."></select></div>
     <div class="filter-group" style="flex: 0.8;" data-label="NIVEL ▾"><select id="f-nivel" multiple placeholder="Nivel..."></select></div>
     <div class="filter-group" style="flex: 0.8;" data-label="CURSO ▾"><select id="f-curso" multiple placeholder="Curso..."></select></div>
     <div class="filter-group" style="flex: 1.2;" data-label="ÁMBITO ▾"><select id="f-ambito" multiple placeholder="Ámbito..."></select></div>
@@ -349,7 +350,7 @@
 
 <script>
 // --- CONSTANTES Y MAPEO ---
-const I = { RBD: 0, NIVEL: 1, CURSO: 2, RUBRICA: 3, OA: 4, NUCLEO: 5, AMBITO: 6, NO_EV: 7, COM: 8, DES: 9, CON: 10, PRO: 11 };
+const I = { RBD: 0, NIVEL: 1, CURSO: 2, RUBRICA: 3, OA: 4, NUCLEO: 5, AMBITO: 6, PERIODO: 7, NO_EV: 8, COM: 9, DES: 10, CON: 11, PRO: 12 };
 const CATEGORIAS = ["No Evaluado", "Comenzando", "Desarrollando", "Consolidando", "Profundizando"];
 
 function getThemeColors() {
@@ -383,6 +384,7 @@ async function initData() {
     const res = await fetch('datos.json');
     DATA_RAW = await res.json();
     setupFiltersStable();
+    setDefaultPeriodo();
   } catch (e) { 
     console.error("Error cargando JSON.", e); 
   }
@@ -426,6 +428,7 @@ function startDashboard() {
     const rbdId = DATA_RAW.maps[I.RBD].findIndex(text => text.startsWith(SESSION_RBD));
     if (rbdId !== -1) {
       ts.rbd.setValue([String(rbdId)]);
+      setDefaultPeriodo(rbdId);
       document.getElementById('group-rbd').style.display = 'none';
       document.getElementById('static-rbd-container').style.display = 'block';
       document.getElementById('static-rbd-text').innerText = DATA_RAW.maps[I.RBD][rbdId];
@@ -474,9 +477,21 @@ function toggleSlep() {
   update();
 }
 
+// --- PERIODO POR DEFECTO ---
+// Sin período seleccionado se sumarían todas las rondas (un mismo niño o colegio contaría varias veces),
+// así que el visor parte siempre en el período más reciente. Para un colegio: el más reciente en que tiene datos.
+function setDefaultPeriodo(rbdId) {
+  let last = DATA_RAW.maps[I.PERIODO].length - 1;
+  if (rbdId !== undefined) {
+    const mine = new Set(DATA_RAW.rows.filter(r => r[I.RBD] === rbdId).map(r => r[I.PERIODO]));
+    if (mine.size) last = Math.max(...mine);
+  }
+  ts.periodo.setValue([String(last)], true);
+}
+
 // --- FILTROS (TOM SELECT) CON ORDEN NATURAL ---
 function setupFiltersStable() {
-  const selectConfig = ['rbd', 'nivel', 'curso', 'ambito', 'nucleo', 'oa'];
+  const selectConfig = ['rbd', 'periodo', 'nivel', 'curso', 'ambito', 'nucleo', 'oa'];
   
   selectConfig.forEach(k => {
     let sortRules = [ {field: 'num_index', direction: 'asc'}, {field: 'text', direction: 'asc'} ];
@@ -504,6 +519,7 @@ function setupFiltersStable() {
       if (!IS_ADMIN && k === 'rbd') return; 
       ts[k].clear(true); 
     });
+    setDefaultPeriodo(IS_ADMIN || SESSION_RBD === null ? undefined : DATA_RAW.maps[I.RBD].findIndex(text => text.startsWith(SESSION_RBD)));
     update(); 
   };
 }
@@ -550,6 +566,7 @@ function update() {
 
   DATA_RAW.rows.forEach(r => {
     // 1. Evaluar filtros globales del territorio (Ignora RBD)
+    if (f.periodo.length && !f.periodo.includes(String(r[I.PERIODO]))) return;
     if (f.nivel.length && !f.nivel.includes(String(r[I.NIVEL]))) return;
     if (f.curso.length && !f.curso.includes(String(r[I.CURSO]))) return;
     if (f.ambito.length && !f.ambito.includes(String(r[I.AMBITO]))) return;
@@ -567,8 +584,8 @@ function update() {
     const alertaRow = nE + com;
 
     // --- NUEVO LÓGICA: Captura de Aulas Únicas (SLEP) ---
-    // Creamos la llave única, ej: "9598-NT1-A"
-    const aulaKey = r[I.RBD] + "-" + r[I.NIVEL] + "-" + r[I.CURSO];
+    // Creamos la llave única, ej: "1-9598-NT1-A" (período-RBD-nivel-curso)
+    const aulaKey = r[I.PERIODO] + "-" + r[I.RBD] + "-" + r[I.NIVEL] + "-" + r[I.CURSO];
     if (!aulasSlep[aulaKey]) aulasSlep[aulaKey] = 0;
     if (totRow > aulasSlep[aulaKey]) aulasSlep[aulaKey] = totRow; // Guarda el N máximo detectado
 
@@ -926,7 +943,8 @@ initData();
     </div>
     <div class="help-section">
       <h3>Filtros</h3>
-      <p>Unidad Educativa, Nivel, Curso, Ámbito, Núcleo y Objetivo de Aprendizaje (O.A.) se pueden combinar y seleccionar varios valores a la vez. "Limpiar Filtros" los resetea todos.</p>
+      <p>Unidad Educativa, Período, Nivel, Curso, Ámbito, Núcleo y Objetivo de Aprendizaje (O.A.) se pueden combinar y seleccionar varios valores a la vez. "Limpiar Filtros" los resetea todos.</p>
+      <p><b>Período:</b> cada ronda de evaluación (ej. 2025 Inicio, 2026 Inicio). El visor parte en el período más reciente; si eliges varios, los resultados se suman.</p>
     </div>
     <div class="help-section">
       <h3>Pestañas</h3>
