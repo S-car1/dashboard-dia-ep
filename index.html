@@ -14,6 +14,7 @@
   <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <style>
     /* TIPOGRAFÍA OFICIAL (Kit Digital SLEP Del Pino): gobCL */
@@ -217,6 +218,15 @@
     .tabla-col tr.fila-col { cursor: pointer; }
     .tabla-col tr.fila-col:hover td { background: var(--brand-soft); }
     .tabla-col .num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+    .hdr-actions { display: flex; gap: 0.5rem; align-items: center; }
+    .btn-download { background: transparent; border: none; color: var(--text-muted); width: 20px; height: 20px; cursor: pointer; opacity: 0; transition: opacity 0.3s, color 0.2s, transform 0.2s; padding: 0; }
+    .btn-download:hover { color: var(--brand); transform: scale(1.1); }
+    .chart-card:hover .btn-download, .btn-download:focus-visible { opacity: 1; }
+    .kpi-nota { font-size: 0.68rem; color: var(--text-muted); margin: -0.9rem 0 1.3rem; }
+    .links-rubricas { font-size: 0.72rem; color: var(--text-muted); margin-top: 0.4rem; line-height: 1.8; }
+    .links-rubricas a { color: var(--brand); text-decoration: none; margin-right: 0.9rem; white-space: nowrap; }
+    .links-rubricas a:hover { text-decoration: underline; }
+    .nota-uso { max-width: 1100px; margin: 2rem auto 1rem; padding: 0 2rem; font-size: 0.68rem; color: var(--text-muted); opacity: 0.75; text-align: center; }
     .tabla-wrap { overflow-x: auto; max-height: 640px; overflow-y: auto; }
     /* Celular: con filtros apilados, la barra fija ocupaba ~la mitad de la pantalla (mismo criterio que dashboard-dia). */
     @media (max-width: 640px) { .sticky-top-section { position: static; } }
@@ -329,17 +339,19 @@
       </div>
     </div>
 
+    <div class="kpi-nota" id="kpi-nota" style="display:none;"></div>
+
     <div class="charts-grid">
       <div class="chart-block full-width">
         <div class="chart-card" style="min-height: 0;">
-          <div class="chart-header"><div class="chart-title">% Logro por Núcleo<span>(Consolidando + Profundizando), del núcleo más débil al más fuerte</span></div><button class="btn-reset-series" onclick="resetChartSeries('chart-nucleo')" title="Doble clic en la leyenda también restablece">Restablecer series</button></div>
+          <div class="chart-header"><div class="chart-title">% Logro por Núcleo<span>(Consolidando + Profundizando), del núcleo más débil al más fuerte</span></div><div class="hdr-actions"><button class="btn-download" onclick="descargarGrafico(this)" title="Descargar gráfico como imagen" aria-label="Descargar gráfico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></button><button class="btn-reset-series" onclick="resetChartSeries('chart-nucleo')" title="Doble clic en la leyenda también restablece">Restablecer series</button></div></div>
           <div class="chart-wrap" id="chart-nucleo" style="min-height: 320px;"></div>
         </div>
       </div>
 
       <div class="chart-block full-width">
         <div class="chart-card" style="min-height: 0;">
-          <div class="chart-header"><div class="chart-title">Distribución por Categoría<span>Proporción de estudiantes en cada categoría de logro</span></div><button class="btn-reset-series" onclick="resetChartSeries('chart-distrib')" title="Doble clic en la leyenda también restablece">Restablecer series</button></div>
+          <div class="chart-header"><div class="chart-title">Distribución por Categoría<span>Proporción de estudiantes en cada categoría de logro</span></div><div class="hdr-actions"><button class="btn-download" onclick="descargarGrafico(this)" title="Descargar gráfico como imagen" aria-label="Descargar gráfico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></button><button class="btn-reset-series" onclick="resetChartSeries('chart-distrib')" title="Doble clic en la leyenda también restablece">Restablecer series</button></div></div>
           <div class="chart-wrap" id="chart-distrib" style="min-height: 140px;"></div>
         </div>
       </div>
@@ -351,14 +363,14 @@
 
       <div class="chart-block full-width" id="card-colegios" style="display:none;">
         <div class="chart-card" style="min-height: 0;">
-          <div class="chart-header"><div class="chart-title">Establecimientos<span>Ordenados según la columna elegida (clic en el encabezado). Clic en una fila para ver solo ese establecimiento.</span></div></div>
+          <div class="chart-header"><div class="chart-title">Establecimientos<span>Orden alfabético; clic en un encabezado para ordenar por esa columna. Clic en una fila para ver solo ese establecimiento.</span></div><div class="hdr-actions"><button class="btn-download" onclick="descargarGrafico(this)" title="Descargar gráfico como imagen" aria-label="Descargar gráfico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></button></div></div>
           <div class="tabla-wrap"><table class="tabla-col" id="tabla-colegios"></table></div>
         </div>
       </div>
 
       <div class="chart-block full-width">
         <div class="chart-card" style="min-height: 0;">
-          <div class="chart-header"><div class="chart-title">Mapa de Calor: Riesgo por Núcleo y Curso<span>% de estudiantes en "Comenzando" (Rojo = Mayor Riesgo). El sin registro se ve aparte en las tarjetas.</span></div><button class="btn-reset-series" onclick="resetChartSeries('chart-heatmap')" title="Doble clic en la leyenda también restablece">Restablecer series</button></div>
+          <div class="chart-header"><div class="chart-title">Mapa de Calor: Riesgo por Núcleo y Curso<span>% de estudiantes en "Comenzando" (Rojo = Mayor Riesgo). El sin registro se ve aparte en las tarjetas.</span></div><div class="hdr-actions"><button class="btn-download" onclick="descargarGrafico(this)" title="Descargar gráfico como imagen" aria-label="Descargar gráfico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></button><button class="btn-reset-series" onclick="resetChartSeries('chart-heatmap')" title="Doble clic en la leyenda también restablece">Restablecer series</button></div></div>
           <div class="chart-wrap" style="min-height: 380px;" id="chart-heatmap"></div>
         </div>
       </div>
@@ -366,13 +378,15 @@
       <div class="chart-block full-width">
         <div class="chart-card" style="min-height: 0;">
           <div class="chart-header"><div class="chart-title">Desglose por Rúbrica Evaluada<span id="sub-rubricas">Composición al 100% por categoría de logro</span></div>
-            <div style="display:flex; gap:0.5rem;"><button class="btn-reset-series" id="btn-rubricas" onclick="toggleRubricas()">Ver todas las rúbricas</button><button class="btn-reset-series" onclick="resetChartSeries('chart-stacked')" title="Doble clic en la leyenda también restablece">Restablecer series</button></div></div>
+            <div class="hdr-actions"><button class="btn-download" onclick="descargarGrafico(this)" title="Descargar gráfico como imagen" aria-label="Descargar gráfico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></button><button class="btn-reset-series" id="btn-rubricas" onclick="toggleRubricas()">Ver todas las rúbricas</button><button class="btn-reset-series" onclick="resetChartSeries('chart-stacked')" title="Doble clic en la leyenda también restablece">Restablecer series</button></div></div>
           <div class="chart-wrap" style="min-height: 300px;" id="chart-stacked"></div>
+          <div class="links-rubricas" id="links-rubricas"></div>
         </div>
       </div>
 
     </div>
   </div>
+  <p class="nota-uso">Herramienta de uso interno y formativo (Agencia de Calidad de la Educación): los resultados orientan las decisiones pedagógicas del equipo. No corresponden a una calificación de los niños ni a una evaluación de docentes, y las variaciones entre períodos comparan generaciones distintas.</p>
 </main>
 
 <script>
@@ -583,7 +597,7 @@ const rowCats = r => [r[I.NO_EV], r[I.COM], r[I.DES], r[I.CON], r[I.PRO]];
 const addTo = (acc, c) => { for (let i = 0; i < 5; i++) acc[i] += c[i]; };
 let lastRubricaData = {};
 let showAllRubricas = false;
-let sortColegios = { key: 'riesgo', dir: -1 };
+let sortColegios = { key: 'nombre', dir: 1 };
 
 function pasaFiltros(r, f, o = {}) {
   const per = o.periodo !== undefined ? [String(o.periodo)] : f.periodo;
@@ -599,10 +613,19 @@ function pasaFiltros(r, f, o = {}) {
 
 // Agrega las filas que pasan los filtros. o.sinRbd = ignora el filtro de establecimiento (territorio);
 // o.periodo = fuerza otro período (para comparar con el año anterior).
+// Clave de comparación entre períodos: establecimiento + nivel + rúbrica
+const claveFila = r => r[I.RBD] + '|' + r[I.NIVEL] + '|' + r[I.RUBRICA];
+function clavesDe(f, periodo) {
+  const S = new Set();
+  DATA_RAW.rows.forEach(r => { if (pasaFiltros(r, f, periodo === undefined ? {} : { periodo })) S.add(claveFila(r)); });
+  return S;
+}
+
 function agregar(f, o = {}) {
   const A = { sums: [0, 0, 0, 0, 0], rubrica: {}, nucleo: {}, nucCurso: {}, aulas: {}, total: 0 };
   DATA_RAW.rows.forEach(r => {
     if (!pasaFiltros(r, f, o)) return;
+    if (o.claves && !o.claves.has(claveFila(r))) return;
     const c = rowCats(r), tot = sumArr(c);
     const rub = DATA_RAW.maps[I.RUBRICA][r[I.RUBRICA]];
     const nuc = DATA_RAW.maps[I.NUCLEO][r[I.NUCLEO]];
@@ -652,16 +675,24 @@ function update() {
 
   const loc = agregar(f);
   const slep = agregar(f, { sinRbd: true });
+  // Comparación con el mismo período del año anterior: solo sobre establecimiento-nivel-rúbrica con datos en ambos períodos
   let prev = null;
   const pi = periodoAnterior(f);
   if (pi !== null) {
-    prev = agregar(f, { periodo: pi });
-    if (prev.total > 0) prev.nombre = DATA_RAW.maps[I.PERIODO][pi]; else prev = null;
+    const full = agregar(f, { periodo: pi });
+    if (full.total > 0) {
+      prev = { nombre: DATA_RAW.maps[I.PERIODO][pi], total: full.total, comparable: false };
+      const kPrev = clavesDe(f, pi), comunes = new Set([...clavesDe(f)].filter(k => kPrev.has(k)));
+      if (comunes.size) {
+        const a1 = agregar(f, { claves: comunes }), a0 = agregar(f, { periodo: pi, claves: comunes });
+        if (sumArr(a1.sums) >= 20 && sumArr(a0.sums) >= 20) Object.assign(prev, { comparable: true, loc: a1, ant: a0, n: comunes.size });
+      }
+    }
   }
 
   renderKPIs(loc, slep, prev);
   renderNucleo(loc, slep, prev);
-  renderDistrib(loc, slep, prev);
+  renderDistrib(loc, slep);
   lastRubricaData = loc.rubrica;
   renderStacked();
   renderHeatmap(loc, slep);
@@ -670,34 +701,44 @@ function update() {
 
 // --- DIBUJAR KPIs ---
 function renderKPIs(loc, slep, prev) {
-  const m = metricas(loc.sums), ms = metricas(slep.sums), mp = prev ? metricas(prev.sums) : null;
-  const set = (id, txt, color) => {
+  const m = metricas(loc.sums), ms = metricas(slep.sums);
+  const set = (id, txt, color, tip) => {
     const el = document.getElementById(id);
     if (txt === null) { el.style.display = 'none'; return; }
-    el.style.display = 'block'; el.innerText = txt; if (color) el.style.color = color;
+    el.style.display = 'block'; el.innerText = txt; el.style.color = color || 'var(--text-muted)'; el.title = tip || '';
   };
-  const delta = (cur, ref, buenoSiSube, ref_txt) => {
-    const d = cur - ref;
-    if (Math.abs(d) < 0.05) return [`= igual que ${ref_txt}`, 'var(--text-muted)'];
-    return [`${d > 0 ? '↑ +' : '↓ '}${d.toFixed(1)} pts vs ${ref_txt}`, (d > 0) === buenoSiSube ? 'var(--total)' : 'var(--red)'];
-  };
+  // Variación en puntos porcentuales (pp), en color neutro: compara generaciones distintas
+  const ppTxt = (d, ref) => Math.abs(d) < 0.05 ? `= 0.0 pp vs ${ref}` : `${d > 0 ? '↑' : '↓'} ${Math.abs(d).toFixed(1)} pp vs ${ref}`;
   document.getElementById('kpi-total').innerText = loc.total.toLocaleString('es-CL');
   document.getElementById('kpi-logro').innerText = m.logro.toFixed(1) + '%';
   document.getElementById('kpi-riesgo').innerText = m.riesgo.toFixed(1) + '%';
   document.getElementById('kpi-sinreg').innerText = m.sinReg.toFixed(1) + '%';
 
+  const nota = document.getElementById('kpi-nota');
   if (prev) {
-    set('kpi-total-prev', `vs ${prev.total.toLocaleString('es-CL')} en ${prev.nombre}`, 'var(--text-muted)');
-    set('kpi-logro-prev', ...delta(m.logro, mp.logro, true, prev.nombre));
-    set('kpi-riesgo-prev', ...delta(m.riesgo, mp.riesgo, false, prev.nombre));
-    set('kpi-sinreg-prev', ...delta(m.sinReg, mp.sinReg, false, prev.nombre));
-  } else ['total', 'logro', 'riesgo', 'sinreg'].forEach(k => set('kpi-' + k + '-prev', null));
+    const tip = 'Variación en puntos porcentuales sobre los establecimientos, niveles y rúbricas con datos en ambos períodos. Compara generaciones distintas de niños.';
+    set('kpi-total-prev', `vs ${prev.total.toLocaleString('es-CL')} en ${prev.nombre}`);
+    if (prev.comparable) {
+      const a = metricas(prev.loc.sums), b = metricas(prev.ant.sums);
+      set('kpi-logro-prev', ppTxt(a.logro - b.logro, prev.nombre), null, tip);
+      set('kpi-riesgo-prev', ppTxt(a.riesgo - b.riesgo, prev.nombre), null, tip);
+      set('kpi-sinreg-prev', ppTxt(a.sinReg - b.sinReg, prev.nombre), null, tip);
+      nota.style.display = 'block';
+      nota.innerText = 'Variaciones en puntos porcentuales (pp) calculadas solo sobre los establecimientos, niveles y rúbricas con datos en ambos períodos. Comparan generaciones distintas de niños.';
+    } else {
+      ['logro', 'riesgo', 'sinreg'].forEach(k => set('kpi-' + k + '-prev', `— sin datos comparables vs ${prev.nombre}`));
+      nota.style.display = 'none';
+    }
+  } else {
+    ['total', 'logro', 'riesgo', 'sinreg'].forEach(k => set('kpi-' + k + '-prev', null));
+    nota.style.display = 'none';
+  }
 
   if (showSlep) {
-    set('kpi-total-slep', `Territorio: ${slep.total.toLocaleString('es-CL')} est.`, 'var(--text-muted)');
-    set('kpi-logro-slep', ...delta(m.logro, ms.logro, true, 'el SLEP'));
-    set('kpi-riesgo-slep', ...delta(m.riesgo, ms.riesgo, false, 'el SLEP'));
-    set('kpi-sinreg-slep', ...delta(m.sinReg, ms.sinReg, false, 'el SLEP'));
+    set('kpi-total-slep', `Territorio: ${slep.total.toLocaleString('es-CL')} est.`);
+    set('kpi-logro-slep', ppTxt(m.logro - ms.logro, 'el SLEP'));
+    set('kpi-riesgo-slep', ppTxt(m.riesgo - ms.riesgo, 'el SLEP'));
+    set('kpi-sinreg-slep', ppTxt(m.sinReg - ms.sinReg, 'el SLEP'));
   } else ['total', 'logro', 'riesgo', 'sinreg'].forEach(k => set('kpi-' + k + '-slep', null));
 }
 
@@ -739,10 +780,9 @@ const tooltipTheme = () => document.body.classList.contains('dark-theme') ? 'dar
 const cssVar = n => getComputedStyle(document.body).getPropertyValue(n).trim();
 
 // Una sola barra apilada por grupo (selección / año anterior / SLEP) en vez del donut
-function renderDistrib(loc, slep, prev) {
+function renderDistrib(loc, slep) {
     const tColors = getThemeColors();
     const grupos = [{ nombre: 'Esta selección', s: loc.sums }];
-    if (prev) grupos.push({ nombre: prev.nombre, s: prev.sums });
     if (showSlep) grupos.push({ nombre: 'Promedio SLEP', s: slep.sums });
     if (sumArr(loc.sums) === 0) {
         document.getElementById('chart-distrib').innerHTML = `<div class="empty-state-container" style="padding:2rem; text-align:center;">Filtros sin resultados</div>`;
@@ -803,20 +843,37 @@ function renderStacked() {
         legend: { position: 'top', horizontalAlign: 'left' }
     };
     safeChartRender('chart-stacked', options);
+    renderLinksRubricas(rubricas);
+}
+
+// Enlaces a la rúbrica oficial (PDF de la Agencia) de las rúbricas que se están mostrando
+const RUBRICAS_URL = 'https://diagnosticointegral.agenciaeducacion.cl/documentosep/rubricas/';
+function urlRubrica(nombre) {
+    const n = parseInt(nombre.match(/^(\d+)/)[1], 10), nn = String(n).padStart(2, '0');
+    const archivo = n === 1 || n === 2 ? `Rubrica ${nn} DIA EP 2025 (1).pdf` : n === 8 ? `Rúbrica ${nn} DIA EP 2025.pdf` : `Rubrica ${nn} DIA EP 2025.pdf`;
+    return RUBRICAS_URL + encodeURIComponent(archivo);
+}
+function renderLinksRubricas(rubricas) {
+    const el = document.getElementById('links-rubricas');
+    el.innerHTML = rubricas.length ? 'Rúbrica oficial (Agencia): ' + rubricas.map(r =>
+        `<a href="${urlRubrica(r)}" target="_blank" rel="noopener">${r.replace(/^(\d+)\..*/, 'N° $1')}</a>`).join('') : '';
 }
 
 // % de logro por núcleo en barras horizontales (reemplaza al radar), con año anterior y SLEP opcionales
 function renderNucleo(loc, slep, prev) {
     const tColors = getThemeColors();
     const logroDe = (A, n) => A && A.nucleo[n] ? pct(A.nucleo[n][3] + A.nucleo[n][4], sumArr(A.nucleo[n])) : 0;
-    const nucleos = Object.keys(loc.nucleo).sort((a, b) => logroDe(loc, a) - logroDe(loc, b) || a.localeCompare(b));
+    // Con comparación al año anterior ambas series usan la misma base (lo que tiene datos en los dos períodos)
+    const conPrev = prev && prev.comparable;
+    const A = conPrev ? prev.loc : loc, B = conPrev ? prev.ant : null;
+    const nucleos = Object.keys(A.nucleo).sort((a, b) => logroDe(A, a) - logroDe(A, b) || a.localeCompare(b));
     if (nucleos.length === 0) {
         document.getElementById('chart-nucleo').innerHTML = `<div class="empty-state-container" style="padding:3rem; text-align:center;">Filtros sin resultados</div>`;
         return;
     }
-    const series = [{ name: 'Esta selección', data: nucleos.map(n => parseFloat(logroDe(loc, n).toFixed(1))) }];
+    const series = [{ name: conPrev ? 'Esta selección (comparable)' : 'Esta selección', data: nucleos.map(n => parseFloat(logroDe(A, n).toFixed(1))) }];
     const colores = [cssVar('--leng')];
-    if (prev) { series.push({ name: prev.nombre, data: nucleos.map(n => parseFloat(logroDe(prev, n).toFixed(1))) }); colores.push(cssVar('--text-muted')); }
+    if (conPrev) { series.push({ name: prev.nombre + ' (comparable)', data: nucleos.map(n => parseFloat(logroDe(B, n).toFixed(1))) }); colores.push(cssVar('--text-muted')); }
     if (showSlep) { series.push({ name: 'Promedio SLEP', data: nucleos.map(n => parseFloat(logroDe(slep, n).toFixed(1))) }); colores.push(cssVar('--purple')); }
     const options = {
         series: series,
@@ -904,6 +961,20 @@ function ordenarColegios(k) {
 }
 function verColegio(id) { ts.rbd.setValue([String(id)]); }
 
+function descargarGrafico(btn) {
+  const card = btn.closest('.chart-card');
+  const acciones = card.querySelectorAll('.hdr-actions');
+  acciones.forEach(a => a.style.visibility = 'hidden');
+  const titleEl = card.querySelector('.chart-title');
+  const base = titleEl ? (titleEl.childNodes[0].textContent || '').trim() : 'Grafico DIA Parvularia';
+  const nombre = base.replace(/[^\wÁÉÍÓÚÜÑáéíóúüñ]+/g, '_').replace(/^_+|_+$/g, '') + '.png';
+  const isDark = document.body.classList.contains('dark-theme');
+  html2canvas(card, { backgroundColor: isDark ? '#161b22' : '#ffffff', scale: 2 }).then(canvas => {
+    const link = document.createElement('a');
+    link.download = nombre; link.href = canvas.toDataURL('image/png'); link.click();
+  }).finally(() => acciones.forEach(a => a.style.visibility = ''));
+}
+
 function abrirAyuda() { document.getElementById('help-overlay').classList.add('open'); }
 function cerrarAyuda() { document.getElementById('help-overlay').classList.remove('open'); }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarAyuda(); });
@@ -935,7 +1006,8 @@ initData();
         <li>Pasar el mouse sobre una porción, barra o celda muestra el valor exacto.</li>
         <li>Clic en un ítem de la leyenda oculta esa serie; el botón "Restablecer series" (o doble clic sobre la leyenda) reactiva todas.</li>
         <li>Riesgo = estudiantes en "Comenzando". "Sin registro" = "No Evaluado": falta el dato, no indica un nivel de aprendizaje. En el Mapa de Calor, rojo = mayor riesgo.</li>
-        <li>La comparación con el año anterior es entre generaciones distintas (no sigue a los mismos niños).</li>
+        <li>Las variaciones respecto al año anterior se muestran en puntos porcentuales (pp), solo sobre los establecimientos, niveles y rúbricas con datos en ambos períodos, y comparan generaciones distintas de niños.</li>
+        <li>El ícono ↓ de cada gráfico lo descarga como imagen. Bajo el desglose por rúbrica hay enlaces a la rúbrica oficial de la Agencia.</li>
         <li>"PROMEDIO SLEP" agrega una comparación contra el SLEP completo al filtrar por un establecimiento.</li>
       </ul>
     </div>
