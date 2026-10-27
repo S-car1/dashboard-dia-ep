@@ -422,7 +422,7 @@ let showSlep = false; // Estado del toggle comparativo territorial
 // --- INICIALIZACIÓN ---
 async function initData() {
   try {
-    const res = await fetch('datos.json');
+    const res = await fetch('datos.json', { cache: 'no-cache' });
     DATA_RAW = await res.json();
     setupFiltersStable();
     setDefaultPeriodo();
